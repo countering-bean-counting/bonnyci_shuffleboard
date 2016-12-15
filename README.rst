@@ -1,7 +1,7 @@
 shuffleboard
 ------------
 
-Integrate GHE, Github, and Trello for project reporting and tracking
+Developer activity integration for project reporting and tracking
 
 PROJECT STATUS
 ~~~~~~~~~~~~~~
@@ -12,33 +12,22 @@ DONE:
 IN PROGRESS:
 ++++++++++++
 
-1. Get Issues and Issue events
-- from github
+1. Get GH Issues and Issue events
 
 TODO:
 ++++
 
-2. Create a card for new Issues
-- in Trello
+2. Get GH Pull Request Events (incl merges)
+3. Get Upstream Activity from Gerrit and Storyboard
+4. Store Collected Data / Define Reports
+5. Reports Delivery Mechanism Concept
 
-3. Update issue card for Issue Events
-- in Trello
 
-4. Get Pull Request Events (incl merges)
-- from ghe
-- from github (eventually)
-
-5. Link PR events to Issues
-- question: how to reference issues? where should they be stored? application cache, re-pull + re-process from github? both?
-
-6. Update issue card for PR Events
-- in Trello
-
-OVERVIEW
-~~~~~~~~
+DEVELOPMENT PHASES
+~~~~~~~~~~~~~~~~~~
 
 Phase I: Functionality (make it work, don't care about code quality)
-- run manually, gets events based on history and compares with with what's already been done (see query options for github, should have option to specify time frame for events)
+- run manually, only get data since last run
 - eventually this should just run all the time with a monitoring process
 
 Phase II: Refactor (improve design and code quality)
