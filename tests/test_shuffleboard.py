@@ -9,11 +9,10 @@ Tests for `shuffleboard` module.
 """
 
 
-import sys
+# import sys
 import unittest
 
-from shuffleboard import shuffleboard
-
+# from shuffleboard import shuffleboard
 
 
 class TestShuffleboard(unittest.TestCase):

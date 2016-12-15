@@ -1,14 +1,20 @@
 # -*- coding: utf-8 -*-
 
 import click
+import github_api
+
+repos = ['projman']
 
 
 @click.command()
 def main(args=None):
-    """Console script for shuffleboard"""
-    click.echo("Replace this message by putting your code into "
-               "shuffleboard.cli.main")
-    click.echo("See click documentation at http://click.pocoo.org/")
+
+    for repo in repos:
+
+        issues = github_api.get_github_issues_for_repo(repo)
+
+        for i in issues:
+            print(vars(i))
 
 
 if __name__ == "__main__":
