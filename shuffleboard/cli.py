@@ -3,15 +3,15 @@
 import click
 import github_api
 
-repos = ['projman']
+repos = ['shuffleboard']
 
 
 @click.command()
 def main(args=None):
 
     for repo in repos:
-
-        issues = github_api.get_github_issues_for_repo(repo)
+        gh = github_api.GithubGrabber(repo)
+        issues = gh.get_issues()
 
         for i in issues:
             print(vars(i))
