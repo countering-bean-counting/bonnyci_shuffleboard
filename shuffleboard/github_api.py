@@ -73,6 +73,8 @@ class GithubGrabber:
 
         if dispatchers is None:
             self.dispatchers = self._build_dispatchers()
+        else:
+            self.dispatchers = dispatchers
 
     def _build_dispatchers(self):
         return {
@@ -81,13 +83,13 @@ class GithubGrabber:
             "issue_comment_event": IssueCommentEventDispatch().dispatcher
         }
 
-    def extract_attrs(self, dispatcher_type, i):
+    def extract_attrs(self, dispatcher_type, obj):
         dispatcher = self.dispatchers[dispatcher_type]
         attributes = {}
         for a in filter(
             lambda a:
-                not a.startswith('__') and a in dispatcher, dir(i)):
-            attributes[a] = dispatcher[a](i)
+                not a.startswith('__') and a in dispatcher, dir(obj)):
+            attributes[a] = dispatcher[a](obj)
         return attributes
 
     def get_issues(self):

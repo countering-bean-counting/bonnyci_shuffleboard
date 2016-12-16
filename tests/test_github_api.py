@@ -77,7 +77,17 @@ class TestGithubGrabber(unittest.TestCase):
             return gh_fake
 
     def test_extract_attrs(self):
-        pass
+        # create a GithubGrabber instance with a custom test dispatcher
+        fake_dispatcher = { "bar": lambda x: x.bar}
+        gh = github_api.GithubGrabber("repo",
+                                      dispatchers={
+                                          "fake_dispatcher": fake_dispatcher},
+                                      gh=None # don't actually talk to Github
+                                      )
+        result = gh.extract_attrs( dispatcher_type="fake_dispatcher",
+                                   obj=type('obj', (object,), {"bar": "baz"}))
+
+        assert result == {"bar": "baz"}
 
     def test_get_issues_one(self):
         gh_fake = self._issues_on([MockGithubClient().issue_populated])
