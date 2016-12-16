@@ -33,6 +33,8 @@ class MockGithubClient:
             "milestone": type('obj', (object,), {"title": "do it!"}),
             "pull_request": type('obj', (object,), {"number": 1}),
             "user": type('obj', (object,), {"login": "foobear"}),
+            "extra1": "HELO",
+            "extra2": "ACK"
         })
 
         self.issue_minimal = type('obj', (object,), {
@@ -48,6 +50,8 @@ class MockGithubClient:
             "milestone": None,
             "pull_request": None,
             "user": type('obj', (object,), {"login": "foobear"}),
+            "extra1": None,
+            "extra2": None
         })
 
 
@@ -60,12 +64,11 @@ class TestGithubGrabber(unittest.TestCase):
         pass
 
     # utility function to list the attributes in an object
-    # TODO remove this if it ends up not being used
-    def _list_fields(self, o):
-        fields = []
+    def _list_attributes(self, o):
+        attributes = []
         for a in filter(lambda a: not a.startswith('__'), dir(o)):
-            fields.append(a)
-        return fields
+            attributes.append(a)
+        return sorted(attributes)
 
     def _issues_on(self, mock_data):
         with patch('github3.GitHub') as mock:
@@ -97,12 +100,15 @@ class TestGithubGrabber(unittest.TestCase):
             "user": "foobear"
         }
 
-        attributes = expected.keys()
-        for a in attributes:
+        expected_attr = sorted(expected.keys())
+        for a in expected_attr:
             # check that we didn't drop any fields
             assert hasattr(test_issue, a)
             # check that the values we expected got set
             assert expected[a] == getattr(test_issue, a)
+
+        # check that we didn't pick up any extra values
+        assert expected_attr == self._list_attributes(test_issue)
 
     def test_get_issues_populated(self):
         gh_fake = self._issues_on([MockGithubClient().issue_populated]*3)
@@ -125,12 +131,15 @@ class TestGithubGrabber(unittest.TestCase):
             "user": "foobear"
         }
 
-        attributes = expected.keys()
-        for a in attributes:
+        expected_attr = sorted(expected.keys())
+        for a in expected_attr:
             # check that we didn't drop any fields
             assert hasattr(test_issue, a)
             # check that the values we expected got set
             assert expected[a] == getattr(test_issue, a)
+
+        # check that we didn't pick up any extra values
+        assert expected_attr == self._list_attributes(test_issue)
 
     def test_get_issues_minimal(self):
         gh_fake = self._issues_on([MockGithubClient().issue_minimal]*3)
@@ -153,22 +162,21 @@ class TestGithubGrabber(unittest.TestCase):
             "user": "foobear"
         }
 
-        attributes = expected.keys()
-        for a in attributes:
+        expected_attr = sorted(expected.keys())
+        for a in expected_attr:
             # check that we didn't drop any fields
             assert hasattr(test_issue, a)
             # check that the values we expected got set
             assert expected[a] == getattr(test_issue, a)
 
-
+        # check that we didn't pick up any extra values
+        assert expected_attr == self._list_attributes(test_issue)
 
     def test_get_issues_empty_set(self):
         gh_fake = self._issues_on([])
         grabber = github_api.GithubGrabber(gh=gh_fake, repo="foo")
         issues = grabber.get_issues()
         assert issues == []
-
-
 
 if __name__ == '__main__':
     unittest.main()
