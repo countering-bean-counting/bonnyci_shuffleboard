@@ -3,6 +3,28 @@
 from github3 import GitHub
 
 
+# Data types for use within Shuffleboard
+
+class Issue:
+    def __init__(self, attributes):
+        for (key, value) in attributes.items():
+            setattr(self, key, value)
+
+
+class IssueEvents:  # TODO
+    def __init__(self, attributes):
+        for (key, value) in attributes.items():
+            setattr(self, key, value)
+
+
+class IssueCommentEvents:  # TODO
+    def __init__(self, attributes):
+        for (key, value) in attributes.items():
+            setattr(self, key, value)
+
+
+# Dispatchers to manage data transformation between Github and Shuffleboard
+
 class IssueDispatch:
     def __init__(self):
         self.dispatcher = {
@@ -26,6 +48,22 @@ class IssueDispatch:
             }
 
 
+class IssueEventDispatch:
+    def __init__(self):
+        self.dispatcher = {
+            # TODO
+        }
+
+
+class IssueCommentEventDispatch:
+    def __init__(self):
+        self.dispatcher = {
+            # TODO
+        }
+
+
+# Class to handle getting Github data
+
 class GithubGrabber:
     def __init__(self, repo, dispatchers=None, owner='BonnyCI', gh=GitHub()):
 
@@ -38,7 +76,9 @@ class GithubGrabber:
 
     def _build_dispatchers(self):
         return {
-            "issue": IssueDispatch().dispatcher
+            "issue": IssueDispatch().dispatcher,
+            "issue_event": IssueEventDispatch().dispatcher,
+            "issue_comment_event": IssueCommentEventDispatch().dispatcher
         }
 
     def extract_attrs(self, dispatcher_type, i):
@@ -61,8 +101,8 @@ class GithubGrabber:
             issues.append(issue)
         return issues
 
+    def get_issue_events(self):
+        return
 
-class Issue:
-    def __init__(self, attributes):
-        for (key, value) in attributes.items():
-            setattr(self, key, value)
+    def get_issues_comment_events(self):
+        return
