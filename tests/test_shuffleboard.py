@@ -12,10 +12,10 @@ Tests for `shuffleboard` module.
 # import sys
 import unittest
 
-# from shuffleboard import shuffleboard
+# import shuffleboard from shuffleboard.py
 
 
-class TestShuffleboard(unittest.TestCase):
+class TestGithubGrabber(unittest.TestCase):
 
     def setUp(self):
         pass
@@ -23,5 +23,9 @@ class TestShuffleboard(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_000_something(self):
+    def test_something(self):
         pass
+
+
+if __name__ == '__main__':
+    unittest.main()
