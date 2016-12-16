@@ -15,7 +15,7 @@ import unittest
 # import shuffleboard from shuffleboard.py
 
 
-class TestGithubGrabber(unittest.TestCase):
+class TestShuffleboard(unittest.TestCase):
 
     def setUp(self):
         pass
