@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-test_shuffleboard
+test_github_api
 ----------------------------------
 
-Tests for `shuffleboard` module.
+Tests for `github_api` module.
 """
 
 
@@ -31,7 +31,7 @@ class MockGithubClient:
             "assignee": type('obj', (object,), {"login": "foobear"}),
             "closed_by": type('obj', (object,), {"login": "foobear"}),
             "milestone": type('obj', (object,), {"title": "do it!"}),
-            "pull_request": type('obj', (object,), {"number": "1"}),
+            "pull_request": type('obj', (object,), {"number": 1}),
             "user": type('obj', (object,), {"login": "foobear"}),
         })
 
@@ -59,6 +59,8 @@ class TestGithubGrabber(unittest.TestCase):
     def tearDown(self):
         pass
 
+    # utility function to list the attributes in an object
+    # TODO remove this if it ends up not being used
     def _list_fields(self, o):
         fields = []
         for a in filter(lambda a: not a.startswith('__'), dir(o)):
@@ -80,11 +82,27 @@ class TestGithubGrabber(unittest.TestCase):
         issues = grabber.get_issues()
         test_issue = issues[0]
 
-        # check that we didn't drop any fields
-        for a in self._list_fields(MockGithubClient().issue_populated):
-            assert hasattr(test_issue, a)
+        expected = {
+            "comments_count": 1,
+            "body": "issue body",
+            "closed_at": "2016-12-15",
+            "created_at": "2016-12-15",
+            "number": 42,
+            "state": "open",
+            "updated_at": "2016-12-15",
+            "assignee": "foobear",
+            "closed_by": "foobear",
+            "milestone": "do it!",
+            "pull_request": 1,
+            "user": "foobear"
+        }
 
-        # TODO check that the values we expected got set
+        attributes = expected.keys()
+        for a in attributes:
+            # check that we didn't drop any fields
+            assert hasattr(test_issue, a)
+            # check that the values we expected got set
+            assert expected[a] == getattr(test_issue, a)
 
     def test_get_issues_populated(self):
         gh_fake = self._issues_on([MockGithubClient().issue_populated]*3)
@@ -92,11 +110,27 @@ class TestGithubGrabber(unittest.TestCase):
         issues = grabber.get_issues()
         test_issue = issues[0]
 
-        # check that we didn't drop any fields
-        for a in self._list_fields(MockGithubClient().issue_populated):
-            assert hasattr(test_issue, a)
+        expected = {
+            "comments_count": 1,
+            "body": "issue body",
+            "closed_at": "2016-12-15",
+            "created_at": "2016-12-15",
+            "number": 42,
+            "state": "open",
+            "updated_at": "2016-12-15",
+            "assignee": "foobear",
+            "closed_by": "foobear",
+            "milestone": "do it!",
+            "pull_request": 1,
+            "user": "foobear"
+        }
 
-        # TODO check that the values we expected got set
+        attributes = expected.keys()
+        for a in attributes:
+            # check that we didn't drop any fields
+            assert hasattr(test_issue, a)
+            # check that the values we expected got set
+            assert expected[a] == getattr(test_issue, a)
 
     def test_get_issues_minimal(self):
         gh_fake = self._issues_on([MockGithubClient().issue_minimal]*3)
@@ -104,11 +138,29 @@ class TestGithubGrabber(unittest.TestCase):
         issues = grabber.get_issues()
         test_issue = issues[0]
 
-        # check that we didn't drop any fields
-        for a in self._list_fields(MockGithubClient().issue_minimal):
-            assert hasattr(test_issue, a)
+        expected = {
+            "comments_count": None,
+            "body": None,
+            "closed_at": None,
+            "created_at": "2016-12-15",
+            "number": 42,
+            "state": "open",
+            "updated_at": "2016-12-15",
+            "assignee": None,
+            "closed_by": None,
+            "milestone": None,
+            "pull_request": None,
+            "user": "foobear"
+        }
 
-        # TODO check that the values we expected got set
+        attributes = expected.keys()
+        for a in attributes:
+            # check that we didn't drop any fields
+            assert hasattr(test_issue, a)
+            # check that the values we expected got set
+            assert expected[a] == getattr(test_issue, a)
+
+
 
     def test_get_issues_empty_set(self):
         gh_fake = self._issues_on([])
