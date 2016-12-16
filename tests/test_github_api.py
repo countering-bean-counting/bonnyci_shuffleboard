@@ -12,6 +12,7 @@ Tests for `github_api` module.
 # import sys
 import unittest
 from unittest.mock import patch
+import warnings
 
 # from github3 import GitHub
 
@@ -79,15 +80,31 @@ class TestGithubGrabber(unittest.TestCase):
     def test_extract_attrs(self):
         # create a GithubGrabber instance with a custom test dispatcher
         fake_dispatcher = { "bar": lambda x: x.bar}
-        gh = github_api.GithubGrabber("repo",
+        gh = github_api.GithubGrabber(None,
                                       dispatchers={
                                           "fake_dispatcher": fake_dispatcher},
-                                      gh=None # don't actually talk to Github
-                                      )
+                                      gh=None)
         result = gh.extract_attrs( dispatcher_type="fake_dispatcher",
                                    obj=type('obj', (object,), {"bar": "baz"}))
 
         assert result == {"bar": "baz"}
+
+    def test_extract_attrs_bad_dispatcher_Type(self):
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            # create a GithubGrabber instance with no dispatchers
+            gh = github_api.GithubGrabber(None, dispatchers={}, gh=None)
+            result = gh.extract_attrs(dispatcher_type="bad", obj=None)
+            # check that we get the expected empty list back
+            assert result == []
+
+            # Check that a warning was issued
+            assert len(w) == 1
+            assert issubclass(w[-1].category, UserWarning)
+            assert "dispatcher_type" in str(w[-1].message)
 
     def test_get_issues_one(self):
         gh_fake = self._issues_on([MockGithubClient().issue_populated])

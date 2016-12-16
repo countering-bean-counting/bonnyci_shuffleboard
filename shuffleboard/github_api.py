@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from github3 import GitHub
+import warnings
 
 
 # Data types for use within Shuffleboard
@@ -84,7 +85,12 @@ class GithubGrabber:
         }
 
     def extract_attrs(self, dispatcher_type, obj):
-        dispatcher = self.dispatchers[dispatcher_type]
+        if dispatcher_type in self.dispatchers:
+            dispatcher = self.dispatchers[dispatcher_type]
+        else:
+            warnings.warn("dispatcher_type %s not found" % dispatcher_type)
+            return []
+
         attributes = {}
         for a in filter(
             lambda a:
