@@ -6,8 +6,10 @@ Developer activity integration for project reporting and tracking
 PROJECT STATUS
 ~~~~~~~~~~~~~~
 
+
 DONE:
 +++++
+
 
 IN PROGRESS:
 ++++++++++++
@@ -17,10 +19,12 @@ IN PROGRESS:
 TODO:
 ++++
 
-2. Get GH Pull Request Events (incl merges)
-3. Get Upstream Activity from Gerrit and Storyboard
+2. Get pull request and merge events from Github
+3. Run Manually
 4. Store Collected Data / Define Reports
-5. Reports Delivery Mechanism Concept
+5. Get Upstream Activity from Gerrit and Storyboard
+6. Run as a Process
+7. Figure out what's next!
 
 
 DEVELOPMENT PHASES
