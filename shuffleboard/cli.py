@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import click
+import requests
+
 import github_api
 
 repos = ['shuffleboard']
@@ -10,8 +12,8 @@ repos = ['shuffleboard']
 def main(args=None):
 
     for repo in repos:
-        gh = github_api.GithubGrabber(repo)
-        issues = gh.get_issues()
+        gh = github_api.GithubGrabber(repo=repo, http_client=requests)
+        issues = gh.get_issues_for_repo()
 
         for i in issues:
             print(vars(i))

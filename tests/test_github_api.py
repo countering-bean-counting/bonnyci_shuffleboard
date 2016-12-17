@@ -21,7 +21,7 @@ from shuffleboard import github_api
 
 class MockGithubClient:
     def __init__(self):
-        self.issue_populated = type('obj', (object,), {
+        self.issue_populated = {
             "comments_count": 1,
             "body": "issue body",
             "closed_at": "2016-12-15",
@@ -29,16 +29,16 @@ class MockGithubClient:
             "number": 42,
             "state": "open",
             "updated_at": "2016-12-15",
-            "assignee": type('obj', (object,), {"login": "foobear"}),
-            "closed_by": type('obj', (object,), {"login": "foobear"}),
-            "milestone": type('obj', (object,), {"title": "do it!"}),
-            "pull_request": type('obj', (object,), {"number": 1}),
-            "user": type('obj', (object,), {"login": "foobear"}),
+            "assignee": {"login": "foobear"},
+            "closed_by": {"login": "foobear"},
+            "milestone": {"title": "do it!"},
+            "pull_request": {"number": 1},
+            "user": {"login": "foobear"},
             "extra1": "HELO",
             "extra2": "ACK"
-        })
+        }
 
-        self.issue_minimal = type('obj', (object,), {
+        self.issue_minimal = {
             "comments_count": None,
             "body": None,
             "closed_at": None,
@@ -50,10 +50,10 @@ class MockGithubClient:
             "closed_by": None,
             "milestone": None,
             "pull_request": None,
-            "user": type('obj', (object,), {"login": "foobear"}),
+            "user": {"login": "foobear"},
             "extra1": None,
             "extra2": None
-        })
+        }
 
 
 class TestGithubGrabber(unittest.TestCase):
@@ -71,33 +71,33 @@ class TestGithubGrabber(unittest.TestCase):
             attributes.append(a)
         return sorted(attributes)
 
-    def _issues_on(self, mock_data):
-        with patch('github3.GitHub') as mock:
-            gh_fake = mock.return_value
-            gh_fake.issues_on.return_value = mock_data
-            return gh_fake
+    def _get(self, mock_data):
+        with patch('requests.Request') as mock:
+            http_fake = mock.return_value
+            http_fake.get.return_value = type('obj', (object,),
+                                              {"json": lambda: mock_data})
+            return http_fake
 
     def test_extract_attrs(self):
         # create a GithubGrabber instance with a custom test dispatcher
-        fake_dispatcher = { "bar": lambda x: x.bar}
-        gh = github_api.GithubGrabber(None,
-                                      dispatchers={
+        fake_dispatcher = {"bar": lambda x: x}
+        gh = github_api.GithubGrabber(dispatchers={
                                           "fake_dispatcher": fake_dispatcher},
-                                      gh=None)
-        result = gh.extract_attrs( dispatcher_type="fake_dispatcher",
-                                   obj=type('obj', (object,), {"bar": "baz"}))
+                                      http_client=None)
+        result = gh.extract_fields(dispatcher_type="fake_dispatcher",
+                                   data={"bar": "baz"})
 
         assert result == {"bar": "baz"}
 
-    def test_extract_attrs_bad_dispatcher_Type(self):
+    def test_extract_attrs_bad_dispatcher_type(self):
 
         with warnings.catch_warnings(record=True) as w:
             # Cause all warnings to always be triggered.
             warnings.simplefilter("always")
 
             # create a GithubGrabber instance with no dispatchers
-            gh = github_api.GithubGrabber(None, dispatchers={}, gh=None)
-            result = gh.extract_attrs(dispatcher_type="bad", obj=None)
+            gh = github_api.GithubGrabber(dispatchers={}, http_client=None)
+            result = gh.extract_fields(dispatcher_type="bad", data=None)
             # check that we get the expected empty list back
             assert result == []
 
@@ -107,9 +107,9 @@ class TestGithubGrabber(unittest.TestCase):
             assert "dispatcher_type" in str(w[-1].message)
 
     def test_get_issues_one(self):
-        gh_fake = self._issues_on([MockGithubClient().issue_populated])
-        grabber = github_api.GithubGrabber(gh=gh_fake, repo="foo")
-        issues = grabber.get_issues()
+        http_fake = self._get([MockGithubClient().issue_populated])
+        grabber = github_api.GithubGrabber(http_client=http_fake, repo="foo")
+        issues = grabber.get_issues_for_repo()
         test_issue = issues[0]
 
         expected = {
@@ -138,9 +138,9 @@ class TestGithubGrabber(unittest.TestCase):
         assert expected_attr == self._list_attributes(test_issue)
 
     def test_get_issues_populated(self):
-        gh_fake = self._issues_on([MockGithubClient().issue_populated]*3)
-        grabber = github_api.GithubGrabber(gh=gh_fake, repo="foo")
-        issues = grabber.get_issues()
+        http_fake = self._get([MockGithubClient().issue_populated] * 3)
+        grabber = github_api.GithubGrabber(http_client=http_fake, repo="foo")
+        issues = grabber.get_issues_for_repo()
         test_issue = issues[0]
 
         expected = {
@@ -169,9 +169,9 @@ class TestGithubGrabber(unittest.TestCase):
         assert expected_attr == self._list_attributes(test_issue)
 
     def test_get_issues_minimal(self):
-        gh_fake = self._issues_on([MockGithubClient().issue_minimal]*3)
-        grabber = github_api.GithubGrabber(gh=gh_fake, repo="foo")
-        issues = grabber.get_issues()
+        http_fake = self._get([MockGithubClient().issue_minimal] * 3)
+        grabber = github_api.GithubGrabber(http_client=http_fake, repo="foo")
+        issues = grabber.get_issues_for_repo()
         test_issue = issues[0]
 
         expected = {
@@ -200,9 +200,9 @@ class TestGithubGrabber(unittest.TestCase):
         assert expected_attr == self._list_attributes(test_issue)
 
     def test_get_issues_empty_set(self):
-        gh_fake = self._issues_on([])
-        grabber = github_api.GithubGrabber(gh=gh_fake, repo="foo")
-        issues = grabber.get_issues()
+        http_fake = self._get([])
+        grabber = github_api.GithubGrabber(http_client=http_fake, repo="foo")
+        issues = grabber.get_issues_for_repo()
         assert issues == []
 
 if __name__ == '__main__':

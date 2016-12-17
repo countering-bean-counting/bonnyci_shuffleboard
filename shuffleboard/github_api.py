@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from github3 import GitHub
 import warnings
 
 
@@ -29,24 +28,20 @@ class IssueCommentEvents:  # TODO
 class IssueDispatch:
     def __init__(self):
         self.dispatcher = {
-                "comments_count": lambda x: x.comments_count,
-                "body": lambda x: x.body,
-                "closed_at": lambda x: x.closed_at,
-                "created_at": lambda x: x.created_at,
-                "number": lambda x: x.number,
-                "state": lambda x: x.state,
-                "updated_at": lambda x: x.updated_at,
-                "assignee": lambda x: x.assignee.login if hasattr(
-                    x.assignee, 'login') else None,
-                "closed_by": lambda x: x.closed_by.login if hasattr(
-                    x.closed_by, 'login') else None,
-                "milestone": lambda x: x.milestone.title if hasattr(
-                    x.milestone, 'title') else None,
-                "pull_request": lambda x: x.pull_request.number if hasattr(
-                    x.pull_request, 'number') else None,
-                "user": lambda x: x.user.login if hasattr(x.user, 'login')
-                else None
-            }
+            "comments_count": lambda x: x,
+            "body": lambda x: x,
+            "closed_at": lambda x: x,
+            "created_at": lambda x: x,
+            "number": lambda x: x,
+            "state": lambda x: x,
+            "updated_at": lambda x: x,
+            "assignee": lambda x: x['login'] if x and 'login' in x else None,
+            "closed_by": lambda x: x['login'] if x and 'login' in x else None,
+            "milestone": lambda x: x['title'] if x and 'title' in x else None,
+            "pull_request": lambda x: x['number'] if x and 'number' in x
+            else None,
+            "user": lambda x: x['login'] if x and 'login' in x else None
+        }
 
 
 class IssueEventDispatch:
@@ -63,14 +58,21 @@ class IssueCommentEventDispatch:
         }
 
 
-# Class to handle getting Github data
+# Class to handle getting Github data at the repository level
 
 class GithubGrabber:
-    def __init__(self, repo, dispatchers=None, owner='BonnyCI', gh=GitHub()):
+    def __init__(self,
+                 repo='',
+                 dispatchers=None,
+                 owner='BonnyCI',
+                 http_client=None,
+                 gh_api_base='https://api.github.com'):
 
-        self.gh = gh
-        self.repo = repo
         self.owner = owner
+        self.repo = repo
+        self.gh_api_base = gh_api_base
+
+        self.http_client = http_client
 
         if dispatchers is None:
             self.dispatchers = self._build_dispatchers()
@@ -84,7 +86,7 @@ class GithubGrabber:
             "issue_comment_event": IssueCommentEventDispatch().dispatcher
         }
 
-    def extract_attrs(self, dispatcher_type, obj):
+    def extract_fields(self, dispatcher_type, data):
         if dispatcher_type in self.dispatchers:
             dispatcher = self.dispatchers[dispatcher_type]
         else:
@@ -92,20 +94,25 @@ class GithubGrabber:
             return []
 
         attributes = {}
-        for a in filter(
-            lambda a:
-                not a.startswith('__') and a in dispatcher, dir(obj)):
-            attributes[a] = dispatcher[a](obj)
+        for a in filter(lambda a: a in dispatcher, data.keys()):
+            attributes[a] = dispatcher[a](data[a])
         return attributes
 
-    def get_issues(self):
-        issues_raw = self.gh.issues_on(username=self.owner,
-                                       repository=self.repo)
+    def get_issues_for_repo(self, repo_endpoint=None):
+
+        if not self.repo:
+            warnings.warn("Can't get_issues_for_repo without a repo!")
+            return []
+
+        if not repo_endpoint:
+            repo_endpoint = '/repos/%s/%s/issues' % (self.owner, self.repo)
+
+        response = self.http_client.get(self.gh_api_base + repo_endpoint)
+        issues_decoded = response.json()
 
         issues = []
-        for i in issues_raw:
-            issue = \
-                Issue(self.extract_attrs('issue', i))
+        for i in issues_decoded:
+            issue = Issue(self.extract_fields('issue', i))
             issues.append(issue)
         return issues
 
