@@ -11,13 +11,13 @@ class Issue:
             setattr(self, key, value)
 
 
-class IssueEvents:  # TODO
+class IssueEvent:
     def __init__(self, attributes):
         for (key, value) in attributes.items():
             setattr(self, key, value)
 
 
-class IssueCommentEvents:  # TODO
+class IssueCommentEvent:  # TODO
     def __init__(self, attributes):
         for (key, value) in attributes.items():
             setattr(self, key, value)
@@ -47,7 +47,13 @@ class IssueDispatch:
 class IssueEventDispatch:
     def __init__(self):
         self.dispatcher = {
-            # TODO
+            "id": lambda x: x,
+            "event": lambda x: x,
+            "created_at": lambda x: x,
+            "actor": lambda x: x['login'] if x and 'login' in x else None,
+            "issue": lambda x: x['number'] if x and 'number' in x else None,
+            "commit_id": lambda x: x,
+            "commit_url": lambda x: x
         }
 
 
@@ -86,6 +92,10 @@ class GithubGrabber:
             "issue_comment_event": IssueCommentEventDispatch().dispatcher
         }
 
+    def _get(self, url):
+        response = self.http_client.get(url)
+        return response.json()
+
     def extract_fields(self, dispatcher_type, data):
         if dispatcher_type in self.dispatchers:
             dispatcher = self.dispatchers[dispatcher_type]
@@ -107,17 +117,32 @@ class GithubGrabber:
         if not repo_endpoint:
             repo_endpoint = '/repos/%s/%s/issues' % (self.owner, self.repo)
 
-        response = self.http_client.get(self.gh_api_base + repo_endpoint)
-        issues_decoded = response.json()
+        issues_decoded = self._get(self.gh_api_base + repo_endpoint)
 
         issues = []
         for i in issues_decoded:
             issue = Issue(self.extract_fields('issue', i))
             issues.append(issue)
         return issues
+        # TODO make this a dict so we can link data { number : issue }
 
-    def get_issue_events(self):
-        return
+    def get_issue_events_for_repo(self, repo_endpoint=None):
+        if not self.repo:
+            warnings.warn("Can't get_issue_events_for_repo without a repo!")
+            return []
+
+        if not repo_endpoint:
+            repo_endpoint = '/repos/%s/%s/issues/events' % (self.owner,
+                                                            self.repo)
+
+        issue_events_decoded = self._get(self.gh_api_base + repo_endpoint)
+
+        issue_events = []
+        for i in issue_events_decoded:
+            issue_event = IssueEvent(self.extract_fields('issue_event', i))
+            issue_events.append(issue_event)
+        return issue_events
+        # TODO make this a dict so we can link data { issue_number : [events]}
 
     def get_issues_comment_events(self):
         return

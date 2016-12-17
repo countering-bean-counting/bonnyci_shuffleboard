@@ -18,6 +18,11 @@ def main(args=None):
         for i in issues:
             print(vars(i))
 
+        issue_events = gh.get_issue_events_for_repo()
+
+        for i in issue_events:
+            print(vars(i))
+
 
 if __name__ == "__main__":
     main()

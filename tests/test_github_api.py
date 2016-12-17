@@ -55,6 +55,27 @@ class MockGithubClient:
             "extra2": None
         }
 
+        self.issue_event_populated = {
+            "id": 42,
+            "event": "winning",
+            "created_at": "2016-12-15",
+            "actor": {"login": "foobear"},
+            "issue": {"number": 1},
+            "commit_id": "abc123",
+            "commit_url": "https://api.github.com/repos/foobear/RePo/commits"
+                          "/abc123"
+        }
+
+        self.issue_event_minimal = {
+            "id": 42,
+            "event": "x",
+            "created_at": "2016-12-15",
+            "actor": None,
+            "issue": {"number": 1},
+            "commit_id": None,
+            "commit_url": None
+        }
+
 
 class TestGithubGrabber(unittest.TestCase):
 
@@ -110,7 +131,7 @@ class TestGithubGrabber(unittest.TestCase):
         http_fake = self._get([MockGithubClient().issue_populated])
         grabber = github_api.GithubGrabber(http_client=http_fake, repo="foo")
         issues = grabber.get_issues_for_repo()
-        test_issue = issues[0]
+        test_issue = issues[0] # TODO this should be a dictionary
 
         expected = {
             "comments_count": 1,
@@ -141,7 +162,7 @@ class TestGithubGrabber(unittest.TestCase):
         http_fake = self._get([MockGithubClient().issue_populated] * 3)
         grabber = github_api.GithubGrabber(http_client=http_fake, repo="foo")
         issues = grabber.get_issues_for_repo()
-        test_issue = issues[0]
+        test_issue = issues[0] # TODO this should be a dictionary
 
         expected = {
             "comments_count": 1,
@@ -172,7 +193,7 @@ class TestGithubGrabber(unittest.TestCase):
         http_fake = self._get([MockGithubClient().issue_minimal] * 3)
         grabber = github_api.GithubGrabber(http_client=http_fake, repo="foo")
         issues = grabber.get_issues_for_repo()
-        test_issue = issues[0]
+        test_issue = issues[0] # TODO this should be a dictionary
 
         expected = {
             "comments_count": None,
@@ -203,7 +224,93 @@ class TestGithubGrabber(unittest.TestCase):
         http_fake = self._get([])
         grabber = github_api.GithubGrabber(http_client=http_fake, repo="foo")
         issues = grabber.get_issues_for_repo()
-        assert issues == []
+        assert issues == [] # TODO this should be a dictionary
+
+    def test_get_issue_events_one(self):
+        http_fake = self._get([MockGithubClient().issue_event_populated])
+        grabber = github_api.GithubGrabber(http_client=http_fake, repo="foo")
+        issue_events = grabber.get_issue_events_for_repo()
+        test_issue = issue_events[0] # TODO this should be a dictionary
+
+        expected = {
+            "id": 42,
+            "event": "winning",
+            "created_at": "2016-12-15",
+            "actor": "foobear",
+            "issue": 1,
+            "commit_id": "abc123",
+            "commit_url": "https://api.github.com/repos/foobear/RePo/commits"
+                          "/abc123"
+        }
+
+        expected_attr = sorted(expected.keys())
+        for a in expected_attr:
+            # check that we didn't drop any fields
+            assert hasattr(test_issue, a)
+            # check that the values we expected got set
+            assert expected[a] == getattr(test_issue, a)
+
+        # check that we didn't pick up any extra values
+        assert expected_attr == self._list_attributes(test_issue)
+
+    def test_get_issue_events_populated(self):
+        http_fake = self._get([MockGithubClient().issue_event_populated] * 3)
+        grabber = github_api.GithubGrabber(http_client=http_fake, repo="foo")
+        issue_events = grabber.get_issue_events_for_repo()
+        test_issue_event = issue_events[0] # TODO this should be a dictionary
+
+        expected = {
+            "id": 42,
+            "event": "winning",
+            "created_at": "2016-12-15",
+            "actor": "foobear",
+            "issue": 1,
+            "commit_id": "abc123",
+            "commit_url": "https://api.github.com/repos/foobear/RePo/commits"
+                          "/abc123"
+        }
+
+        expected_attr = sorted(expected.keys())
+        for a in expected_attr:
+            # check that we didn't drop any fields
+            assert hasattr(test_issue_event, a)
+            # check that the values we expected got set
+            assert expected[a] == getattr(test_issue_event, a)
+
+        # check that we didn't pick up any extra values
+        assert expected_attr == self._list_attributes(test_issue_event)
+
+    def test_get_issue_events_minimal(self):
+        http_fake = self._get([MockGithubClient().issue_event_minimal] * 3)
+        grabber = github_api.GithubGrabber(http_client=http_fake, repo="foo")
+        issue_events = grabber.get_issue_events_for_repo()
+        test_issue_event = issue_events[0] # TODO this should be a dictionary
+
+        expected = {
+            "id": 42,
+            "event": "x",
+            "created_at": "2016-12-15",
+            "actor": None,
+            "issue": 1,
+            "commit_id": None,
+            "commit_url": None
+        }
+
+        expected_attr = sorted(expected.keys())
+        for a in expected_attr:
+            # check that we didn't drop any fields
+            assert hasattr(test_issue_event, a)
+            # check that the values we expected got set
+            assert expected[a] == getattr(test_issue_event, a)
+
+        # check that we didn't pick up any extra values
+        assert expected_attr == self._list_attributes(test_issue_event)
+
+    def test_get_issue_events_empty_set(self):
+        http_fake = self._get([])
+        grabber = github_api.GithubGrabber(http_client=http_fake, repo="foo")
+        issue_events = grabber.get_issue_events_for_repo()
+        assert issue_events == [] # TODO this should be a dictionary
 
 if __name__ == '__main__':
     unittest.main()
