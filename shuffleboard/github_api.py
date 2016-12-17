@@ -136,12 +136,14 @@ class GithubGrabber:
 
         issue_events_decoded = self._get(self.gh_api_base + repo_endpoint)
 
-        issue_events = []
+        issue_events = {}
         for i in issue_events_decoded:
             issue_event = IssueEvent(self.extract_fields('issue_event', i))
-            issue_events.append(issue_event)
+            if issue_event.issue in issue_events:
+                issue_events[issue_event.issue].append(issue_event)
+            else:
+                issue_events[issue_event.issue] = [issue_event]
         return issue_events
-        # TODO make this a dict so we can link data { issue_number : [events]}
 
     def get_issues_comment_events(self):
         return

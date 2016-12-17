@@ -20,13 +20,13 @@ from shuffleboard import github_api
 
 
 class MockGithubClient:
-    def __init__(self):
+    def __init__(self, key=42):
         self.issue_populated = {
             "comments_count": 1,
             "body": "issue body",
             "closed_at": "2016-12-15",
             "created_at": "2016-12-15",
-            "number": 42,
+            "number": key,
             "state": "open",
             "updated_at": "2016-12-15",
             "assignee": {"login": "foobear"},
@@ -43,7 +43,7 @@ class MockGithubClient:
             "body": None,
             "closed_at": None,
             "created_at": "2016-12-15",
-            "number": 5,
+            "number": key,
             "state": "open",
             "updated_at": "2016-12-15",
             "assignee": None,
@@ -60,7 +60,7 @@ class MockGithubClient:
             "event": "winning",
             "created_at": "2016-12-15",
             "actor": {"login": "foobear"},
-            "issue": {"number": 1},
+            "issue": {"number": key},
             "commit_id": "abc123",
             "commit_url": "https://api.github.com/repos/foobear/RePo/commits"
                           "/abc123"
@@ -71,7 +71,7 @@ class MockGithubClient:
             "event": "x",
             "created_at": "2016-12-15",
             "actor": None,
-            "issue": {"number": 1},
+            "issue": {"number": key},
             "commit_id": None,
             "commit_url": None
         }
@@ -161,7 +161,8 @@ class TestGithubGrabber(unittest.TestCase):
 
     def test_get_issues_populated(self):
         http_fake = self._get([MockGithubClient().issue_populated,
-                               MockGithubClient().issue_minimal])
+                               MockGithubClient(key=1).issue_populated,
+                               MockGithubClient(key=2).issue_populated])
         grabber = github_api.GithubGrabber(http_client=http_fake, repo="foo")
         issues = grabber.get_issues_for_repo()
         test_issue = issues[42]
@@ -193,17 +194,18 @@ class TestGithubGrabber(unittest.TestCase):
 
     def test_get_issues_minimal(self):
         http_fake = self._get([MockGithubClient().issue_minimal,
-                               MockGithubClient().issue_populated])
+                               MockGithubClient(key=1).issue_minimal,
+                               MockGithubClient(key=2).issue_minimal])
         grabber = github_api.GithubGrabber(http_client=http_fake, repo="foo")
         issues = grabber.get_issues_for_repo()
-        test_issue = issues[5]
+        test_issue = issues[42]
 
         expected = {
             "comments_count": None,
             "body": None,
             "closed_at": None,
             "created_at": "2016-12-15",
-            "number": 5,
+            "number": 42,
             "state": "open",
             "updated_at": "2016-12-15",
             "assignee": None,
@@ -233,14 +235,14 @@ class TestGithubGrabber(unittest.TestCase):
         http_fake = self._get([MockGithubClient().issue_event_populated])
         grabber = github_api.GithubGrabber(http_client=http_fake, repo="foo")
         issue_events = grabber.get_issue_events_for_repo()
-        test_issue = issue_events[0] # TODO this should be a dictionary
+        test_issue = issue_events[42].pop()
 
         expected = {
             "id": 42,
             "event": "winning",
             "created_at": "2016-12-15",
             "actor": "foobear",
-            "issue": 1,
+            "issue": 42,
             "commit_id": "abc123",
             "commit_url": "https://api.github.com/repos/foobear/RePo/commits"
                           "/abc123"
@@ -257,17 +259,19 @@ class TestGithubGrabber(unittest.TestCase):
         assert expected_attr == self._list_attributes(test_issue)
 
     def test_get_issue_events_populated(self):
-        http_fake = self._get([MockGithubClient().issue_event_populated] * 3)
+        http_fake = self._get([MockGithubClient().issue_event_populated,
+                               MockGithubClient(key=1).issue_event_populated,
+                               MockGithubClient(key=2).issue_event_populated])
         grabber = github_api.GithubGrabber(http_client=http_fake, repo="foo")
         issue_events = grabber.get_issue_events_for_repo()
-        test_issue_event = issue_events[0] # TODO this should be a dictionary
+        test_issue_event = issue_events[42].pop()
 
         expected = {
             "id": 42,
             "event": "winning",
             "created_at": "2016-12-15",
             "actor": "foobear",
-            "issue": 1,
+            "issue": 42,
             "commit_id": "abc123",
             "commit_url": "https://api.github.com/repos/foobear/RePo/commits"
                           "/abc123"
@@ -284,17 +288,19 @@ class TestGithubGrabber(unittest.TestCase):
         assert expected_attr == self._list_attributes(test_issue_event)
 
     def test_get_issue_events_minimal(self):
-        http_fake = self._get([MockGithubClient().issue_event_minimal] * 3)
+        http_fake = self._get([MockGithubClient().issue_event_minimal,
+                               MockGithubClient(key=1).issue_event_minimal,
+                               MockGithubClient(key=2).issue_event_minimal])
         grabber = github_api.GithubGrabber(http_client=http_fake, repo="foo")
         issue_events = grabber.get_issue_events_for_repo()
-        test_issue_event = issue_events[0]
+        test_issue_event = issue_events[42].pop()
 
         expected = {
             "id": 5,
             "event": "x",
             "created_at": "2016-12-15",
             "actor": None,
-            "issue": 1,
+            "issue": 42,
             "commit_id": None,
             "commit_url": None
         }
@@ -313,7 +319,7 @@ class TestGithubGrabber(unittest.TestCase):
         http_fake = self._get([])
         grabber = github_api.GithubGrabber(http_client=http_fake, repo="foo")
         issue_events = grabber.get_issue_events_for_repo()
-        assert issue_events == [] # TODO this should be a dictionary
+        assert issue_events == {}
 
 if __name__ == '__main__':
     unittest.main()
