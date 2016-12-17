@@ -119,12 +119,11 @@ class GithubGrabber:
 
         issues_decoded = self._get(self.gh_api_base + repo_endpoint)
 
-        issues = []
+        issues = {}
         for i in issues_decoded:
             issue = Issue(self.extract_fields('issue', i))
-            issues.append(issue)
+            issues[issue.number] = issue
         return issues
-        # TODO make this a dict so we can link data { number : issue }
 
     def get_issue_events_for_repo(self, repo_endpoint=None):
         if not self.repo:

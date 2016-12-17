@@ -15,7 +15,7 @@ def main(args=None):
         gh = github_api.GithubGrabber(repo=repo, http_client=requests)
         issues = gh.get_issues_for_repo()
 
-        for i in issues:
+        for i in issues.values():
             print(vars(i))
 
         issue_events = gh.get_issue_events_for_repo()
