@@ -11,18 +11,19 @@ repos = ['shuffleboard']
 @click.command()
 def main(args=None):
 
-    for repo in repos:
-        gh = github_api.GithubGrabber(repo=repo, http_client=requests)
-        issues = gh.get_issues_for_repo()
+    gh = github_api.GithubGrabber(repos=repos, http_client=requests)
 
-        for i in issues.values():
-            print(vars(i))
+    issues = gh.get_issues()
+    for (repo, issues_list) in issues.items():
+        print("repo")
+        [print(vars(i)) for i in issues_list]
 
-        issue_events = gh.get_issue_events_for_repo()
-
-        for i in issue_events.values():
-            [print(vars(j)) for j in i]
-
+    events = gh.get_events()
+    for (repo, typed_events) in events.items():
+        print(repo)
+        for (typed_event_name, event_list) in typed_events.items():
+            print(typed_event_name)
+            [print (vars(e)) for e in event_list]
 
 if __name__ == "__main__":
     main()
