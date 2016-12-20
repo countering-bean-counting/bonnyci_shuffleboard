@@ -23,7 +23,8 @@ def main(args=None):
         print(repo)
         for (typed_event_name, event_list) in typed_events.items():
             print(typed_event_name)
-            [print (vars(e)) for e in event_list]
+            [print(vars(e)) for e in event_list]
+
 
 if __name__ == "__main__":
     main()
