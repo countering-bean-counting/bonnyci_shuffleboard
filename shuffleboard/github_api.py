@@ -1,29 +1,49 @@
 # -*- coding: utf-8 -*-
 
+import re
 import warnings
 
 
 # Data types for use within Shuffleboard
+# TODO these should be explicitly listed out
+
+
+class Event:
+    def __init__(self, attributes):
+        for (key, value) in attributes.items():
+            setattr(self, key, value)
+
+
+class IssueEvent(Event):
+    def __init__(self, attributes):
+        super().__init__(attributes)
+        self.action = attributes['action']
+
 
 class Issue:
     def __init__(self, attributes):
         for (key, value) in attributes.items():
             setattr(self, key, value)
 
+# TODO Milestone
 
-class IssueEvent:
-    def __init__(self, attributes):
-        for (key, value) in attributes.items():
-            setattr(self, key, value)
+# TODO PullRequest
 
-
-class IssueCommentEvent:  # TODO
-    def __init__(self, attributes):
-        for (key, value) in attributes.items():
-            setattr(self, key, value)
+# TODO Contributor
 
 
 # Dispatchers to manage data transformation between Github and Shuffleboard
+
+class EventDispatch:
+    def __init__(self):
+        self.dispatcher = {
+            "id": lambda x: x,
+            "type": lambda x: x,
+            "actor": lambda x: x['login'] if x and 'login' in x else None,
+            "repo": lambda x: x['name'] if x and 'name' in x else None,
+            "created_at": lambda x: x,
+        }
+
 
 class IssueDispatch:
     def __init__(self):
@@ -44,38 +64,18 @@ class IssueDispatch:
         }
 
 
-class IssueEventDispatch:
-    def __init__(self):
-        self.dispatcher = {
-            "id": lambda x: x,
-            "event": lambda x: x,
-            "created_at": lambda x: x,
-            "actor": lambda x: x['login'] if x and 'login' in x else None,
-            "issue": lambda x: x['number'] if x and 'number' in x else None,
-            "commit_id": lambda x: x,
-            "commit_url": lambda x: x
-        }
-
-
-class IssueCommentEventDispatch:
-    def __init__(self):
-        self.dispatcher = {
-            # TODO
-        }
-
-
 # Class to handle getting Github data at the repository level
 
 class GithubGrabber:
     def __init__(self,
-                 repo='',
+                 repos=[],
                  dispatchers=None,
                  owner='BonnyCI',
                  http_client=None,
                  gh_api_base='https://api.github.com'):
 
         self.owner = owner
-        self.repo = repo
+        self.repos = repos
         self.gh_api_base = gh_api_base
 
         self.http_client = http_client
@@ -88,8 +88,7 @@ class GithubGrabber:
     def _build_dispatchers(self):
         return {
             "issue": IssueDispatch().dispatcher,
-            "issue_event": IssueEventDispatch().dispatcher,
-            "issue_comment_event": IssueCommentEventDispatch().dispatcher
+            "event": EventDispatch().dispatcher,
         }
 
     def _get(self, url):
@@ -108,42 +107,48 @@ class GithubGrabber:
             attributes[a] = dispatcher[a](data[a])
         return attributes
 
-    def get_issues_for_repo(self, repo_endpoint=None):
-
-        if not self.repo:
-            warnings.warn("Can't get_issues_for_repo without a repo!")
-            return []
-
-        if not repo_endpoint:
-            repo_endpoint = '/repos/%s/%s/issues' % (self.owner, self.repo)
-
-        issues_decoded = self._get(self.gh_api_base + repo_endpoint)
-
+    def get_issues(self):
         issues = {}
-        for i in issues_decoded:
-            issue = Issue(self.extract_fields('issue', i))
-            issues[issue.number] = issue
+        for repo in self.repos:
+            repo_endpoint = '/repos/%s/%s/issues' % (self.owner, repo)
+            issues_decoded = self._get(self.gh_api_base + repo_endpoint +
+                                       '?per_page=100')
+
+            if repo not in issues:
+                issues[repo] = []
+
+            for i in issues_decoded:
+                issue = Issue(self.extract_fields('issue', i))
+                issues[repo].append(issue)
         return issues
 
-    def get_issue_events_for_repo(self, repo_endpoint=None):
-        if not self.repo:
-            warnings.warn("Can't get_issue_events_for_repo without a repo!")
-            return []
+    def get_events(self):
+        events_endpoint = '/users/%s/events' % (self.owner)
+        events_decoded = self._get(self.gh_api_base + events_endpoint +
+                                   '?per_page=100')
+        events = {}
+        for e in events_decoded:
+            attributes = self.extract_fields('event', e)
 
-        if not repo_endpoint:
-            repo_endpoint = '/repos/%s/%s/issues/events' % (self.owner,
-                                                            self.repo)
-
-        issue_events_decoded = self._get(self.gh_api_base + repo_endpoint)
-
-        issue_events = {}
-        for i in issue_events_decoded:
-            issue_event = IssueEvent(self.extract_fields('issue_event', i))
-            if issue_event.issue in issue_events:
-                issue_events[issue_event.issue].append(issue_event)
+            if re.match("Issue", e['type']):
+                attributes['action'] = e['payload']['action']
+                attributes['issue'] = e['payload']['issue']['number']
+                attributes['instance'] = Issue(self.extract_fields(
+                    'issue', e['payload']['issue']))
+                event = IssueEvent(attributes)
             else:
-                issue_events[issue_event.issue] = [issue_event]
-        return issue_events
+                # it's an event type we haven't account for yet
+                #  get the payload fields so we can stub it out
+                attributes['payload'] = list(e['payload'].keys())
+                event = Event(attributes)
 
-    def get_issues_comment_events(self):
-        return
+            if event.repo not in events:
+                events[event.repo] = {}
+
+            if event.type not in events[event.repo]:
+                events[event.repo][event.type] = [event]
+            else:
+                events[event.repo][event.type].append(event)
+
+        return events
+
