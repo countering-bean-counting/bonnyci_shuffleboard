@@ -1,0 +1,26 @@
+HTTP/1.1 200 OK
+Server: GitHub.com
+Date: Sun, 01 Jan 2017 23:04:19 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 184374
+Status: 200 OK
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 58
+X-RateLimit-Reset: 1483315430
+Cache-Control: public, max-age=60, s-maxage=60
+Vary: Accept
+ETag: "c3491ccdb156126600c5cc8c8ea28de9"
+Last-Modified: Fri, 30 Dec 2016 00:36:54 GMT
+X-Poll-Interval: 60
+X-GitHub-Media-Type: github.v3; format=json
+Link: <https://api.github.com/user/23387923/events?page=2>; rel="next", <https://api.github.com/user/23387923/events?page=10>; rel="last"
+Access-Control-Expose-Headers: ETag, Link, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval
+Access-Control-Allow-Origin: *
+Content-Security-Policy: default-src 'none'
+Strict-Transport-Security: max-age=31536000; includeSubdomains; preload
+X-Content-Type-Options: nosniff
+X-Frame-Options: deny
+X-XSS-Protection: 1; mode=block
+Vary: Accept-Encoding
+X-Served-By: ef96c2e493b28ffea49b891b085ed2dd
+X-GitHub-Request-Id: 43ABA592:54FD:14C3CBA:58698AF3

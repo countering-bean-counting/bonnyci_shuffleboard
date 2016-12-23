@@ -55,7 +55,7 @@ class TestGithubGrabber(unittest.TestCase):
         # check that our return structure is keyed on event type
         self.assertTrue('Caturday' in events,
                         msg="%s not in events data" % expected['type'])
-        self.assertEquals(len(events['Caturday']), 1)
+        self.assertEqual(len(events['Caturday']), 1)
 
         got = events['Caturday'][0]
 

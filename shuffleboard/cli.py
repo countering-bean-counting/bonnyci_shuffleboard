@@ -2,18 +2,19 @@
 
 import click
 import requests
-import pprint
 
 import github_api
-import plunder
-import shuffleboard
+import shuffleboard as sb
 
 
 @click.command()
 def main(args=None):
 
-    # TODO set this instance type based on command line args
-    writer = shuffleboard.EventsCLIWriter()
+    # TODO set the writer instance type based on command line args
+    cli_writer = sb.EventsCLIWriter()
+    # csv_writer = sb.EventsCSVWriter('/home/auggy/')
+
+    writer = cli_writer
 
     gh = github_api.GithubGrabber(http_client=requests)
     events = gh.get_events()
