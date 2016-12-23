@@ -2,23 +2,22 @@
 
 import click
 import requests
+import pprint
 
 import github_api
-
-repos = ['shuffleboard']
+import plunder
+import shuffleboard
 
 
 @click.command()
 def main(args=None):
 
-    gh = github_api.GithubGrabber(http_client=requests)
+    # TODO set this instance type based on command line args
+    writer = shuffleboard.EventsCLIWriter()
 
+    gh = github_api.GithubGrabber(http_client=requests)
     events = gh.get_events()
-    for (repo, typed_events) in events.items():
-        print(repo)
-        for (typed_event_name, event_list) in typed_events.items():
-            print(typed_event_name)
-            [print(list(e.items())) for e in event_list]
+    writer.write(events)
 
 
 if __name__ == "__main__":
