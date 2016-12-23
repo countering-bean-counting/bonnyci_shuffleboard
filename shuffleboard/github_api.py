@@ -21,16 +21,21 @@ class GithubGrabber:
 
     # get events and group by type
     def get_events(self):
-        events_endpoint = '/users/%s/events' % (self.owner)
+        events_endpoint = '/users/%s/events' % self.owner
         events_decoded = self._get(self.gh_api_base + events_endpoint +
                                    '?per_page=%s' % self.page)
-        events = {}
-        for e in events_decoded:
-            type = e['type']
-
-            if type not in events:
-                events[type] = [e]
-            else:
-                events[type].append(e)
-
+        events = self.aggregate_events(events_decoded)
         return events
+
+    def aggregate_events(self, events):
+        events_aggregated = {}
+
+        for e in events:
+            event_type = e['type']
+
+            if event_type not in events_aggregated:
+                events_aggregated[event_type] = [e]
+            else:
+                events_aggregated[event_type].append(e)
+
+        return events_aggregated
