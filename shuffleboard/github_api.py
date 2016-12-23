@@ -26,15 +26,11 @@ class GithubGrabber:
                                    '?per_page=%s' % self.page)
         events = {}
         for e in events_decoded:
-            repo = e['repo']['name']
             type = e['type']
 
-            if repo not in events:
-                events[repo] = {}
-
-            if type not in events[repo]:
-                events[repo][type] = [e]
+            if type not in events:
+                events[type] = [e]
             else:
-                events[repo][type].append(e)
+                events[type].append(e)
 
         return events

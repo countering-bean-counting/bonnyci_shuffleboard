@@ -52,14 +52,12 @@ class TestGithubGrabber(unittest.TestCase):
         grabber = github_api.GithubGrabber(http_client=http_fake)
         events = grabber.get_events()
 
-        # check that our return structure is keyed on repo and event type
-        self.assertTrue('repo' in events,
-                        msg="%s not in events data" % expected['repo']['name'])
-        self.assertTrue('Caturday' in events['repo'],
+        # check that our return structure is keyed on event type
+        self.assertTrue('Caturday' in events,
                         msg="%s not in events data" % expected['type'])
-        self.assertEquals(len(events['repo']['Caturday']), 1)
+        self.assertEquals(len(events['Caturday']), 1)
 
-        got = events['repo']['Caturday'][0]
+        got = events['Caturday'][0]
 
         for e in expected:
             # check that we didn't drop any fields
