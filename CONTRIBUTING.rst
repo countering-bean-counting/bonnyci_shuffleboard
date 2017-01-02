@@ -56,7 +56,7 @@ You can do this easily in git by using ``-s`` when you run ``git commit``.
 An example is provided in the "Get Started" section.
 
 
-Types of Contributions
+Ways to Contribute
 ----------------------
 
 Report Bugs
@@ -127,12 +127,11 @@ Next, find something to work on:
 Larger work items are identified by Milestones. Each of these milestones is
 associated with several Issues that represent smaller units of work.
 
-The current milestone under development is tracked in the README for now.
-This will change either to a Trello board or Github project board in the
-future.
+Development is tracked in a Github Project:
+https://github.com/BonnyCI/shuffleboard/projects/1
 
-Once you've found something to work on: create a branch and push your
-changes there.
+Once you've found something to work on, assign the issue to yourself and add
+ the label "In Progress". Then, create a branch and push your changes there.
 
 1. Create a branch for local development::
 

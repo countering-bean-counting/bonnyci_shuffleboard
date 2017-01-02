@@ -3,9 +3,8 @@ shuffleboard
 
 Developer activity data collection for statistical analysis experimentation.
 
-
-The point of this project is to serve as a sandbox for verifying statistical
-methods of analysis used in other projects.
+This project serves as a sandbox for verifying statistical methods of
+analysis used in other projects.
 
 Uncertainty is reduced because the data represent the entire population we
 wish to analyze. This allows us to experiment with unfamiliar statistical
