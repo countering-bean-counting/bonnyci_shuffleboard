@@ -10,6 +10,7 @@ Tests for `shuffleboard` module.
 
 import json
 import unittest
+import re
 
 from shuffleboard import github_api as gha
 from shuffleboard import shuffleboard as sb
@@ -31,6 +32,15 @@ class MockCSVWriter:
         self.sheet.append(i)
 
 
+class MockTxtFileWriter:
+    def __init__(self):
+        self.data = None
+
+    def write(self, data):
+        self.data = data
+        return
+
+
 class TestShuffleboard(unittest.TestCase):
 
     def setUp(self):
@@ -40,6 +50,9 @@ class TestShuffleboard(unittest.TestCase):
         with open('tests/github_events.json', 'r') as f:
             self.events_json = json.load(f)
             self.events = self.gh.aggregate_events(self.events_json)
+
+        with open('tests/gh_headers.json', 'r') as f:
+            self.gh_headers = json.load(f)
 
     def tearDown(self):
         pass
@@ -70,6 +83,17 @@ class TestShuffleboard(unittest.TestCase):
         # clear it out in case other tests use it
         #  again, this is not an ideal pattern but it works for now
         MOCK_OUTPUT.clear()
+
+    def test_gh_headers_txt_writer(self):
+        # just checks running the code path and documents the expected
+        # format for recording the github headers from the last run
+        mock_writer = MockTxtFileWriter()
+        header_writer = sb.GhHeaderTxtFileWriter(writer=mock_writer,
+                                                 filename='foo',
+                                                 out_path='foo')
+        header_writer.write(self.gh_headers)
+        self.assertEqual(len(mock_writer.data), 924)
+        self.assertTrue(re.match('{".*"}', mock_writer.data))
 
 if __name__ == '__main__':
     unittest.main()

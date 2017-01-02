@@ -22,7 +22,7 @@ class GithubGrabber:
         return response
 
     # get events and group by type
-    def get_events(self, etag):
+    def get_events(self, etag=None):
         headers = {}
         if etag:
             headers['If-None-Match'] = etag

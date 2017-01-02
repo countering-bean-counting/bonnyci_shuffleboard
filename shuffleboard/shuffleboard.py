@@ -68,8 +68,10 @@ class DBWriter(Writer):
 
 
 class GhHeaderTxtFileWriter(TxtFileWriter):
-    def __init__(self, filename=None, out_path=None, *args, **kwargs):
-        super().__init__(filename=filename, out_path=out_path, *args, *kwargs)
+    def __init__(self, filename=None, out_path=None, writer=None, *args,
+                 **kwargs):
+        super().__init__(filename=filename, out_path=out_path,
+                         writer=writer, *args, *kwargs)
 
     def write(self, data={}):
         super().write(json.dumps(dict(data)))

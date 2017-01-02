@@ -39,11 +39,12 @@ class TestGithubGrabber(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def _get(self, mock_data):
+    def _get(self, mock_data, status_code=200):
         with patch('requests.Request') as mock:
             http_fake = mock.return_value
             http_fake.get.return_value = type('obj', (object,),
                                               {"json": lambda: mock_data,
+                                               "status_code": status_code,
                                                "headers": {}})
             return http_fake
 
@@ -69,7 +70,17 @@ class TestGithubGrabber(unittest.TestCase):
                             (e, expected[e], got[e]))
 
         # check that we didn't pick up any extra values
-        self.assertEqual(sorted(expected.keys()), sorted(got.keys()), msg="found extra values")
+        self.assertEqual(sorted(expected.keys()), sorted(got.keys()),
+                         msg="found extra values")
+
+    def test_get_events_304(self):
+        expected = MockGithubClient().event
+        http_fake = self._get([], status_code=304)
+        grabber = github_api.GithubGrabber(http_client=http_fake)
+        events = grabber.get_events(etag=123)
+        self.assertTrue('no_events' in events)
+        self.assertEqual(len(events), 1)
+
 
 if __name__ == '__main__':
     unittest.main()
