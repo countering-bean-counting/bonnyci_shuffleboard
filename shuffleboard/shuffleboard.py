@@ -43,6 +43,20 @@ class CSVWriter(Writer):
         return
 
 
+class TxtFileWriter(Writer):
+
+    def __init__(self, out_path=None, writer=None, filename=None):
+        self.path = os.path.join(out_path, filename)
+        self.writer = writer
+
+    def write(self, data=None):
+        if self.writer:
+            self.writer.write(data)
+        else:
+            with open(self.path, 'w') as f:
+                f.write(data)
+
+
 class DBWriter(Writer):
     # TODO implement DB writes
     def __init__(self):
@@ -50,6 +64,14 @@ class DBWriter(Writer):
 
     def write(self, function):
         super()
+
+
+class GhHeaderTxtFileWriter(TxtFileWriter):
+    def __init__(self, filename=None, out_path=None, *args, **kwargs):
+        super().__init__(filename=filename, out_path=out_path, *kwargs)
+
+    def write(self, data={}):
+        super().write(json.dumps(str(data)))
 
 
 class EventsCLIWriter(CLIWriter):
@@ -163,6 +185,11 @@ class EventsCSVWriter(CSVWriter):
             sheets[event_name] += data_rows
 
         return sheets
+
+class EventsTxtFileWriter(TxtFileWriter):
+    # TODO dump response to a text file in case of parsing issues
+    def __init__(self):
+        pass
 
 
 class EventsDBWriter(DBWriter):

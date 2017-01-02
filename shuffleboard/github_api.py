@@ -14,9 +14,12 @@ class GithubGrabber:
         self.gh_api_base = gh_api_base
         self.http_client = http_client
         self.page = 100
+        self.headers = {}
 
     def _get(self, url):
         response = self.http_client.get(url)
+        # TODO index by timestamp
+        self.headers[url] = response.headers
         return response.json()
 
     # get events and group by type
