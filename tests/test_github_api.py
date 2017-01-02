@@ -43,7 +43,8 @@ class TestGithubGrabber(unittest.TestCase):
         with patch('requests.Request') as mock:
             http_fake = mock.return_value
             http_fake.get.return_value = type('obj', (object,),
-                                              {"json": lambda: mock_data})
+                                              {"json": lambda: mock_data,
+                                               "headers": {}})
             return http_fake
 
     def test_get_events(self):
