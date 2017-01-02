@@ -40,6 +40,14 @@ class TestShuffleboard(unittest.TestCase):
         # print(output)
         self.assertEqual(16, len(output))
 
+    def test_events_csv_writer(self):
+        output = []
+        writer = sb.EventsCSVWriter(
+            '/home/auggy/dev/BonnyCI/shuffleboard_data')
+        writer.write(self.events)
+        # for debugging
+        print(output)
+        #self.assertEqual(16, len(output))
 
 if __name__ == '__main__':
     unittest.main()
