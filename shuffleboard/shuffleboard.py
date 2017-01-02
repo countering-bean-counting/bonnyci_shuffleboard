@@ -2,6 +2,7 @@
 
 import abc
 import csv
+import datetime as dt
 import json
 import os
 
@@ -93,16 +94,19 @@ class EventsCLIWriter(CLIWriter):
 
 class EventsCSVWriter(CSVWriter):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, output_path, *args, **kwargs):
+        self.timestamp = dt.datetime.utcnow().strftime("%Y%m%d_%H%M")
+        output_path += '/events_' + self.timestamp
+        super().__init__(output_path=output_path, *args, **kwargs)
 
     def write(self, events):
-        # TODO: set filename as current datetimestamp
         filename_prefix = 'events_'
         sheets = self.build_event_rows(events)
 
+        os.makedirs(self.output_path)
         for (event_name, rows) in sheets.items():
-            super().write(filename=filename_prefix + event_name, data=rows)
+            super().write(filename=filename_prefix + event_name + '_' +
+                          self.timestamp + '.csv', data=rows)
         return
 
     def build_event_rows(self, events):
