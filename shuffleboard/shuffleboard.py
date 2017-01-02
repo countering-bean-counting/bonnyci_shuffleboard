@@ -2,6 +2,7 @@
 
 import abc
 import csv
+import json
 import os
 
 
@@ -27,15 +28,16 @@ class CLIWriter(Writer):
 
 class CSVWriter(Writer):
 
-    def __init__(self, output_path):
+    def __init__(self, output_path, csv_writer=csv.writer):
         self.output_path = output_path
+        self.csv_writer = csv_writer
         # TODO: check output path exists
 
     def write(self, filename=None, data=[]):
         path = os.path.join(self.output_path, filename)
         with open(path, 'w', newline='') as csvfile:
-            writer = csv.writer(csvfile, delimiter=" || ", quotechar='|',
-                                quoting=csv.QUOTE_MINIMAL)
+            writer = self.csv_writer(csvfile, delimiter='|',
+                                     quotechar='|', quoting=csv.QUOTE_MINIMAL)
             for i in data:
                 writer.writerow(i)
         return
@@ -45,6 +47,9 @@ class DBWriter(Writer):
     # TODO implement DB writes
     def __init__(self):
         pass
+
+    def write(self, function):
+        super()
 
 
 class EventsCLIWriter(CLIWriter):
@@ -68,19 +73,47 @@ class EventsCSVWriter(CSVWriter):
 
     def write(self, events):
         # TODO: set filename as current datetimestamp
-        filename_prefix = 'test_'
+        filename_prefix = 'events_'
         sheets = self.build_event_rows(events)
 
-        for (name, rows) in sheets.items():
-            super().write(filename=filename_prefix + name, data=rows)
+        for (event_name, rows) in sheets.items():
+            super().write(filename=filename_prefix + event_name, data=rows)
         return
 
     def build_event_rows(self, events):
+
+        event_type_header_row_dispatch = {
+            'CreateEvent' : lambda x: x,
+            'DeleteEvent': lambda x: x,
+            'ForkEvent': lambda x: x,
+            'GollumEvent': lambda x: x.append('payload_pages_page_name'),
+            'IssueCommentEvent': lambda x: x.append('payload_issue_number'),
+            'IssuesEvent': lambda x: x.append('payload_issue_number'),
+            'PullRequestEvent': lambda x: x.append(
+                'payload_pull_request_number'),
+            'PullRequestReviewCommentEvent': lambda x: x.append(
+                'payload_pull_request_number'),
+            'PushEvent': lambda x: x,
+        }
+
+        event_type_data_row_dispatch = {
+            'CreateEvent': lambda x, y: x,
+            'DeleteEvent': lambda x, y: x,
+            'ForkEvent' : lambda x, y: x,
+            'GollumEvent': lambda x, y: x.append(y['payload']['pages'][0]['page_name']),
+            'IssueCommentEvent': lambda x, y: x.append(y['payload']['issue']['number']),
+            'IssuesEvent': lambda x, y: x.append(y['payload']['issue']['number']),
+            'PullRequestEvent': lambda x, y: x.append(y['payload']['pull_request']['number']),
+            'PullRequestReviewCommentEvent': lambda x, y: x.append(y['payload']['pull_request']['number']),
+            'PushEvent': lambda x, y: x
+        }
+
         sheets = {}
         # split data into sheets
-        for (name, event_list) in events.items():
+        for (event_name, event_list) in events.items():
             header_row = []
-            rows = []
+            data_rows = []
+            sheets[event_name] = []
 
             # build the header row
             for (k, v) in event_list[0].items():
@@ -92,7 +125,8 @@ class EventsCSVWriter(CSVWriter):
                 else:
                     header_row.append(k)
 
-            rows.append(header_row)
+            event_type_header_row_dispatch[event_name](header_row)
+            sheets[event_name].append(header_row)
 
             # build a row for the event data
             # TODO: this is pretty ugly and could be cleaned up
@@ -102,32 +136,26 @@ class EventsCSVWriter(CSVWriter):
 
                 # events are a dict
                 for (key, value) in e.items():
-                    # the gh response has a series of keys plus a payload dict
-                    # so we need to treat the payload dict differently
+                    # the gh response has a series of keys plus a payload
+                    # object with keys that vary by event type
                     if isinstance(value, dict):
-                        # we don't need the full object for certain objects in
-                        # the response so just grab the identifier
                         for (k, v) in value.items():
                             if isinstance(v, dict):
-                                if 'number' in v:
-                                    row.append(v['number'])
-                                elif 'login' in v:
-                                    row.append(v['login'])
-                                elif 'id' in v:
-                                    row.append(v['id'])
-                                else:
-                                    # see if there's something else we
-                                    # care about
-                                    row.append("Found key %k with value type "
-                                               "%v" % (k, type(v)))
+                                # serialize any objects contained in the
+                                # payload so we don't have to do an api call
+                                #  later to get these details
+                                row.append(json.dumps(dict(v.items())))
                             else:
                                 row.append(v)
                     else:
                         row.append(value)
 
-                rows.append(row)
+                # add fields for convenience based on event type
+                event_type_data_row_dispatch[event_name](row, e)
 
-            sheets[name] = rows
+                data_rows.append(row)
+
+            sheets[event_name] += data_rows
 
         return sheets
 
@@ -136,7 +164,3 @@ class EventsDBWriter(DBWriter):
     # TODO implement db writes for events
     def __init__(self):
         pass
-
-    def write(self, function):
-        function()
-        return
