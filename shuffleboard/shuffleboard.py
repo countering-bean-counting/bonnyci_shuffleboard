@@ -68,8 +68,8 @@ class EventsCLIWriter(CLIWriter):
 
 class EventsCSVWriter(CSVWriter):
 
-    def __init__(self, output_path):
-        super().__init__(output_path)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def write(self, events):
         # TODO: set filename as current datetimestamp
@@ -83,7 +83,7 @@ class EventsCSVWriter(CSVWriter):
     def build_event_rows(self, events):
 
         event_type_header_row_dispatch = {
-            'CreateEvent' : lambda x: x,
+            'CreateEvent': lambda x: x,
             'DeleteEvent': lambda x: x,
             'ForkEvent': lambda x: x,
             'GollumEvent': lambda x: x.append('payload_pages_page_name'),
@@ -99,12 +99,17 @@ class EventsCSVWriter(CSVWriter):
         event_type_data_row_dispatch = {
             'CreateEvent': lambda x, y: x,
             'DeleteEvent': lambda x, y: x,
-            'ForkEvent' : lambda x, y: x,
-            'GollumEvent': lambda x, y: x.append(y['payload']['pages'][0]['page_name']),
-            'IssueCommentEvent': lambda x, y: x.append(y['payload']['issue']['number']),
-            'IssuesEvent': lambda x, y: x.append(y['payload']['issue']['number']),
-            'PullRequestEvent': lambda x, y: x.append(y['payload']['pull_request']['number']),
-            'PullRequestReviewCommentEvent': lambda x, y: x.append(y['payload']['pull_request']['number']),
+            'ForkEvent': lambda x, y: x,
+            'GollumEvent':
+                lambda x, y: x.append(y['payload']['pages'][0]['page_name']),
+            'IssueCommentEvent':
+                lambda x, y: x.append(y['payload']['issue']['number']),
+            'IssuesEvent':
+                lambda x, y: x.append(y['payload']['issue']['number']),
+            'PullRequestEvent':
+                lambda x, y: x.append(y['payload']['pull_request']['number']),
+            'PullRequestReviewCommentEvent':
+                lambda x, y: x.append(y['payload']['pull_request']['number']),
             'PushEvent': lambda x, y: x
         }
 

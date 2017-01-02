@@ -8,15 +8,27 @@ test_shuffleboard
 Tests for `shuffleboard` module.
 """
 
-
-# import sys
 import json
-from io import StringIO
 import unittest
-import sys
 
 from shuffleboard import github_api as gha
 from shuffleboard import shuffleboard as sb
+
+# setting a global var since I'm not sure how singletons work in Python
+#  also this pattern is really sloppy but it does the job for now
+MOCK_OUTPUT = {}
+
+
+# Mock a csv class that overrides our methods so we don't actually write a
+# file and can just capture the output
+class MockCSVWriter:
+    def __init__(self, csvfile=None, *args, **kwargs):
+        self.csvfile = csvfile
+        MOCK_OUTPUT[csvfile.name] = []
+        self.sheet = MOCK_OUTPUT[csvfile.name]
+
+    def writerow(self, i):
+        self.sheet.append(i)
 
 
 class TestShuffleboard(unittest.TestCase):
@@ -36,18 +48,28 @@ class TestShuffleboard(unittest.TestCase):
         output = []
         writer = sb.EventsCLIWriter(printer=output.append)
         writer.write(self.events)
-        # for debugging
-        # print(output)
+        # print(output) # for debugging
         self.assertEqual(16, len(output))
 
     def test_events_csv_writer(self):
-        output = []
+        csv_writer = MockCSVWriter
+        # TODO: this should use mock_open to prevent empty file creation
         writer = sb.EventsCSVWriter(
-            '/home/auggy/dev/BonnyCI/shuffleboard_data')
+            '/tmp',
+            csv_writer=csv_writer)
         writer.write(self.events)
-        # for debugging
-        print(output)
-        #self.assertEqual(16, len(output))
+
+        # minimal tests to make sure the format is right
+        self.assertTrue('/tmp/events_PullRequestEvent' in MOCK_OUTPUT)
+        self.assertEqual(len(MOCK_OUTPUT.keys()), 8)
+        self.assertTrue(isinstance(MOCK_OUTPUT['/tmp/events_PullRequestEvent'],
+                                   list))
+        self.assertTrue(isinstance(MOCK_OUTPUT[
+                                       '/tmp/events_PullRequestEvent'][0],
+                                   list))
+        # clear it out in case other tests use it
+        #  again, this is not an ideal pattern but it works for now
+        MOCK_OUTPUT.clear()
 
 if __name__ == '__main__':
     unittest.main()

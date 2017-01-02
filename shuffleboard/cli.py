@@ -11,7 +11,7 @@ import shuffleboard as sb
 def main(args=None):
 
     # TODO set the writer instance type based on command line args
-    cli_writer = sb.EventsCLIWriter(printer=print)
+    # cli_writer = sb.EventsCLIWriter(printer=print)
     csv_writer = sb.EventsCSVWriter(
         '/home/auggy/dev/BonnyCI/shuffleboard_data')
 
