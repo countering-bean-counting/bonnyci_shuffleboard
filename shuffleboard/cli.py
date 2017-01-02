@@ -22,14 +22,14 @@ def main(args=None):
 
     # TODO set the writer instance type based on command line args
     # cli_writer = sb.EventsCLIWriter(printer=print)
-    csv_writer = sb.EventsCSVWriter(path)
+    csv_writer = sb.EventsCSVWriter(output_path=path)
     writer = csv_writer
 
     header_writer = sb.GhHeaderTxtFileWriter(out_path=path,
                                              filename='gh_headers')
 
     gh = github_api.GithubGrabber(http_client=requests)
-    events = gh.get_events(etag=etag)
+    events = gh.get_events() #(etag=etag)
     header_writer.write(gh.headers)
     # TODO dump full response to a file in case something fails
 
