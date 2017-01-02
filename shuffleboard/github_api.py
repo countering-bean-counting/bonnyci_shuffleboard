@@ -16,19 +16,23 @@ class GithubGrabber:
         self.page = 100
         self.headers = {}
 
-    def _get(self, url):
-        response = self.http_client.get(url)
-        # TODO index by timestamp
-        self.headers[url] = response.headers
-        return response.json()
+    def _get(self, url, headers={}):
+        response = self.http_client.get(url, headers=headers)
+        self.headers = response.headers
+        return response
 
     # get events and group by type
-    def get_events(self):
+    def get_events(self, etag):
+        headers = {}
+        if etag:
+            headers['If-None-Match'] = etag
         events_endpoint = '/users/%s/events' % self.owner
-        events_decoded = self._get(self.gh_api_base + events_endpoint +
-                                   '?per_page=%s' % self.page)
-        events = self.aggregate_events(events_decoded)
-        return events
+        response = self._get(self.gh_api_base + events_endpoint,
+                             headers=headers)
+        if response.status_code != 200:
+            return {'no_events': response}
+        else:
+            return self.aggregate_events(response.json())
 
     def aggregate_events(self, events):
         events_aggregated = {}

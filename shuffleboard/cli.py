@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import click
+import json
+import os
 import requests
 
 import github_api
@@ -13,11 +15,13 @@ def main(args=None):
     # TODO file path should be an env var and/or arg
     path = '/home/auggy/dev/BonnyCI/shuffleboard_data'
 
+    header_file = os.path.join(path, 'gh_headers')
+    with open(header_file, 'r') as f:
+        last_headers = json.load(f)
+        etag = last_headers["ETag"][2:]
+
     # TODO set the writer instance type based on command line args
-
-    # dump full response to a file in case something fails in the processing
     # cli_writer = sb.EventsCLIWriter(printer=print)
-
     csv_writer = sb.EventsCSVWriter(path)
     writer = csv_writer
 
@@ -25,9 +29,15 @@ def main(args=None):
                                              filename='gh_headers')
 
     gh = github_api.GithubGrabber(http_client=requests)
-    events = gh.get_events()
+    events = gh.get_events(etag=etag)
     header_writer.write(gh.headers)
-    writer.write(events)
+    # TODO dump full response to a file in case something fails
+
+    if 'no_events' in events:
+        print("No events received %s" % events.values())
+    else:
+        print("Found new events, writing to %s" % path)
+        writer.write(events)
 
 
 if __name__ == "__main__":
