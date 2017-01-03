@@ -96,7 +96,7 @@ class EventsCSVWriter(CSVWriter):
 
     def __init__(self, output_path, *args, **kwargs):
         self.timestamp = dt.datetime.utcnow().strftime("%Y%m%d_%H%M")
-        output_path += '/events_' + self.timestamp
+        output_path = os.path.join(output_path, 'events_' + self.timestamp)
         super().__init__(output_path=output_path, *args, **kwargs)
 
     def write(self, events):
