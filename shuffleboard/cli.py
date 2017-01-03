@@ -12,8 +12,12 @@ import shuffleboard as sb
 @click.command()
 def main(args=None):
 
-    # TODO file path should be an env var and/or arg
-    path = '/home/auggy/dev/BonnyCI/shuffleboard_data'
+    # TODO these should be command line args
+    path = '/home/auggy/dev/BonnyCI/shuffleboard_data' # TODO env var option
+    use_etag = True
+    read_from_file = False
+    # read_from_file = True
+    read_from_file_name = 'events.json'
 
     header_file = os.path.join(path, 'gh_headers')
     with open(header_file, 'r') as f:
@@ -28,10 +32,28 @@ def main(args=None):
     header_writer = sb.GhHeaderTxtFileWriter(out_path=path,
                                              filename='gh_headers')
 
-    gh = github_api.GithubGrabber(http_client=requests)
-    events = gh.get_events() #(etag=etag)
-    header_writer.write(gh.headers)
-    # TODO dump full response to a file in case something fails
+    if read_from_file:
+        # read in json file
+        events_file = os.path.join(path, read_from_file_name)
+        print("reading events from file %s" % events_file)
+        with open(events_file, 'r') as f:
+            events_json = json.load(f)
+
+        # call aggregate events
+        gh = github_api.GithubGrabber()
+        events = gh.aggregate_events(events_json)
+
+    else:
+        gh = github_api.GithubGrabber(http_client=requests)
+
+        events_args = {}
+        if use_etag:
+            events_args['etag'] = etag
+
+        events = gh.get_events(**events_args)
+        header_writer.write(gh.headers)
+
+        # TODO dump full response to a file in case something fails
 
     if 'no_events' in events:
         print("No events received %s" % events.values())
