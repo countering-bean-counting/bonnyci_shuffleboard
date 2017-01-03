@@ -32,7 +32,7 @@ class GithubGrabber:
         if response.status_code != 200:
             return {'no_events': response}
         else:
-            return self.aggregate_events(response.json())
+            return response.json()
 
     def aggregate_events(self, events):
         events_aggregated = {}

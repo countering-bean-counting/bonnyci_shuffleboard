@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import click
+from shutil import copyfile
 import json
 import os
 import requests
@@ -13,10 +14,9 @@ import shuffleboard as sb
 def main(args=None):
 
     # TODO these should be command line args
-    path = '/home/auggy/dev/BonnyCI/shuffleboard_data' # TODO env var option
-    use_etag = True
-    read_from_file = False
-    # read_from_file = True
+    path = '/home/auggy/dev/BonnyCI/shuffleboard_data'  # TODO env var option
+    use_etag = False
+    read_from_file = True
     read_from_file_name = 'events.json'
 
     header_file = os.path.join(path, 'gh_headers')
@@ -39,9 +39,7 @@ def main(args=None):
         with open(events_file, 'r') as f:
             events_json = json.load(f)
 
-        # call aggregate events
         gh = github_api.GithubGrabber()
-        events = gh.aggregate_events(events_json)
 
     else:
         gh = github_api.GithubGrabber(http_client=requests)
@@ -50,16 +48,22 @@ def main(args=None):
         if use_etag:
             events_args['etag'] = etag
 
-        events = gh.get_events(**events_args)
+        events_json = gh.get_events(**events_args)
         header_writer.write(gh.headers)
 
-        # TODO dump full response to a file in case something fails
+        # dump json response to file in case something fails
+        events_file = os.path.join(path, 'events.json')
+        print("dumping events to file %s" % events_file)
+        with open(events_file, 'w') as f:
+            json.dump(events_json, f)
 
-    if 'no_events' in events:
-        print("No events received %s" % events.values())
+    if 'no_events' in events_json:
+        print("No events received %s" % events_json.values())
     else:
+        events = gh.aggregate_events(events_json)
         print("Found new events, writing to %s" % path)
         writer.write(events)
+        copyfile(events_file, os.path.join(writer.output_path, 'events.json'))
 
 
 if __name__ == "__main__":

@@ -24,9 +24,12 @@ MOCK_OUTPUT = {}
 # file and can just capture the output
 class MockCSVWriter:
     def __init__(self, csvfile=None, *args, **kwargs):
-        self.csvfile = csvfile
-        MOCK_OUTPUT[csvfile.name] = []
-        self.sheet = MOCK_OUTPUT[csvfile.name]
+        if csvfile:
+            parts = csvfile.name.split('/')[-1].split('_')
+            MOCK_OUTPUT[parts[1]] = []
+            self.sheet = MOCK_OUTPUT[parts[1]]
+        else:
+            self.sheet = []
 
     def writerow(self, i):
         self.sheet.append(i)
@@ -67,18 +70,16 @@ class TestShuffleboard(unittest.TestCase):
     def test_events_csv_writer(self):
         csv_writer = MockCSVWriter
         # TODO: this should use mock_open to prevent empty file creation
-        writer = sb.EventsCSVWriter(
-            '/tmp',
-            csv_writer=csv_writer)
+        writer = sb.EventsCSVWriter('/tmp', csv_writer=csv_writer)
         writer.write(self.events)
 
         # minimal tests to make sure the format is right
-        self.assertTrue('/tmp/events_PullRequestEvent' in MOCK_OUTPUT)
+        self.assertTrue('PullRequestEvent' in MOCK_OUTPUT)
         self.assertEqual(len(MOCK_OUTPUT.keys()), 8)
-        self.assertTrue(isinstance(MOCK_OUTPUT['/tmp/events_PullRequestEvent'],
+        self.assertTrue(isinstance(MOCK_OUTPUT['PullRequestEvent'],
                                    list))
         self.assertTrue(isinstance(MOCK_OUTPUT[
-                                       '/tmp/events_PullRequestEvent'][0],
+                                       'PullRequestEvent'][0],
                                    list))
         # clear it out in case other tests use it
         #  again, this is not an ideal pattern but it works for now

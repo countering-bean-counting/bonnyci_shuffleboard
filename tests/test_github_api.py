@@ -52,7 +52,7 @@ class TestGithubGrabber(unittest.TestCase):
         expected = MockGithubClient().event
         http_fake = self._get([expected])
         grabber = github_api.GithubGrabber(http_client=http_fake)
-        events = grabber.get_events()
+        events = grabber.aggregate_events(grabber.get_events())
 
         # check that our return structure is keyed on event type
         self.assertTrue('Caturday' in events,
