@@ -43,6 +43,12 @@ class CSVWriter(Writer):
                 writer.writerow(i)
         return
 
+    def combine_rows(self):
+        pass
+
+    def combine_json(self):
+        pass
+
 
 class TxtFileWriter(Writer):
 
@@ -123,6 +129,7 @@ class EventsCSVWriter(CSVWriter):
             'PullRequestReviewCommentEvent': lambda x: x.append(
                 'payload_pull_request_number'),
             'PushEvent': lambda x: x,
+            'WatchEvent': lambda x: x
         }
 
         event_type_data_row_dispatch = {
@@ -139,7 +146,8 @@ class EventsCSVWriter(CSVWriter):
                 lambda x, y: x.append(y['payload']['pull_request']['number']),
             'PullRequestReviewCommentEvent':
                 lambda x, y: x.append(y['payload']['pull_request']['number']),
-            'PushEvent': lambda x, y: x
+            'PushEvent': lambda x, y: x,
+            'WatchEvent': lambda x, y: x
         }
 
         sheets = {}
@@ -167,6 +175,10 @@ class EventsCSVWriter(CSVWriter):
             for e in event_list:
                 # set up the csv row
                 row = []
+
+                if isinstance(e['payload'], str):
+                    decoded = json.loads(e['payload'])
+                    e['payload'] = decoded
 
                 # events are a dict
                 for (key, value) in e.items():

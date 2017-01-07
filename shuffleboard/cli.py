@@ -2,8 +2,10 @@
 
 import click
 from shutil import copyfile
+import glob
 import json
 import os
+import re
 import requests
 
 import github_api
@@ -14,10 +16,46 @@ import shuffleboard as sb
 def main(args=None):
 
     # TODO these should be command line args
+    project = "BonnyCI"
     path = '/home/auggy/dev/BonnyCI/shuffleboard_data'  # TODO env var option
     use_etag = True
     read_from_file = False
     read_from_file_name = 'events.json'
+    first_run_folder = '/home/auggy/dev/BonnyCI/shuffleboard_data/first_run_in'
+    first_run = True
+
+    if first_run:
+
+        # get a list of all json files at the top level starting with "event"
+        events_list = []
+        for events_file in glob.glob(first_run_folder + '/' + 'events*.json'):
+            print("reading events file %s", events_file)
+            # combine file contents into one json structure
+            f = open(events_file, 'r')
+            content = f.read()
+            if re.match('\[', content):
+                parsed_content = json.loads(content)
+                events_list += parsed_content
+            else:
+                parsed_content = ','.join(content.split('}\n{'))
+                events_list.append(json.loads(parsed_content))
+
+        gh = github_api.GithubGrabber()
+        events = gh.aggregate_events(events_list)
+        print("Writing events to %s" % first_run_folder)
+        events_writer = sb.EventsCSVWriter(output_path=first_run_folder)
+        events_writer.write(events)
+
+        # get a list of all directory names (these should be repo names)
+        repos = []
+
+        # for each directory
+        for repo in repos:
+            pass
+            # get a list of all json files
+
+        # don't run the rest of the script
+        exit()
 
     header_file = os.path.join(path, 'gh_headers')
     with open(header_file, 'r') as f:
