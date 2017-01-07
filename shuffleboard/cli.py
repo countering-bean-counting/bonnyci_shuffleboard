@@ -47,12 +47,41 @@ def main(args=None):
         events_writer.write(events)
 
         # get a list of all directory names (these should be repo names)
-        repos = []
+        walk = tuple(os.walk(first_run_folder))
+        repos = walk[0][1]
 
         # for each directory
         for repo in repos:
-            pass
-            # get a list of all json files
+            repo_folder = os.path.join(first_run_folder, repo)
+            csv_writer = sb.CSVWriter(repo_folder)
+
+            # write out labels
+            try:
+                labels_file = open(os.path.join(repo_folder, 'labels.json'), 'r')
+                labels_decoded = json.load(labels_file)
+                print("Writing labels to %s" % repo_folder)
+                labels = csv_writer.build_rows(labels_decoded)
+                csv_writer.write(filename='labels.csv', data=labels)
+            except FileNotFoundError:
+                print("labels.json not found in %s" % repo)
+
+            # write out milestones
+            try:
+                milestones_file = open(
+                    os.path.join(repo_folder, 'milestones.json'), 'r')
+                milestones_decoded = json.load(milestones_file)
+                if len(milestones_decoded) > 0:
+                    print("Writing milestones to %s" % repo_folder)
+                    milestones = csv_writer.build_rows(milestones_decoded)
+                    csv_writer.write(filename='milestones.csv', data=milestones)
+                else:
+                    print("No milestones found for %s" % repo)
+            except FileNotFoundError:
+                print("milestones.json not found in %s" % repo)
+
+
+
+
 
         # don't run the rest of the script
         exit()

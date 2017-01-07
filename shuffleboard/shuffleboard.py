@@ -38,16 +38,20 @@ class CSVWriter(Writer):
         path = os.path.join(self.output_path, filename)
         with open(path, 'w', newline='') as csvfile:
             writer = self.csv_writer(csvfile, delimiter='|',
-                                     quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                                     quotechar='"', quoting=csv.QUOTE_MINIMAL)
             for i in data:
                 writer.writerow(i)
         return
 
-    def combine_rows(self):
-        pass
-
-    def combine_json(self):
-        pass
+    def build_rows(self, data=[]):
+        header_row = list(data[0].keys())
+        data_rows = []
+        sheet = []
+        for row in data:
+            data_rows.append(list(row.values()))
+        sheet.append(header_row)
+        sheet += data_rows
+        return sheet
 
 
 class TxtFileWriter(Writer):
@@ -107,7 +111,7 @@ class EventsCSVWriter(CSVWriter):
 
     def write(self, events):
         filename_prefix = 'events_'
-        sheets = self.build_event_rows(events)
+        sheets = self.build_rows(events)
 
         os.makedirs(self.output_path)
         for (event_name, rows) in sheets.items():
@@ -115,7 +119,7 @@ class EventsCSVWriter(CSVWriter):
                           self.timestamp + '.csv', data=rows)
         return
 
-    def build_event_rows(self, events):
+    def build_rows(self, events):
 
         event_type_header_row_dispatch = {
             'CreateEvent': lambda x: x,
