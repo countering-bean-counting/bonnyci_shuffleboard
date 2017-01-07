@@ -77,4 +77,4 @@
 `curl -i "https://api.github.com/repos/BonnyCI/ci-plunder/pulls/comments?per_page=100" >> ci-plunder/pull_request_comments.json`;
 `curl -i "https://api.github.com/repos/BonnyCI/zuul/pulls/comments?per_page=100" >> zuul/pull_request_comments.json`;
 
-`find . -name "*.json" | xargs sed -i '1,26 d'`;
+`find . -name "*.json" | xargs sed -i '1,24 d'`;
