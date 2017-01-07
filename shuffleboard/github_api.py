@@ -34,6 +34,7 @@ class GithubGrabber:
         else:
             return response.json()
 
+# TODO this might belong in the shuffleboard class, not here
     def aggregate_events(self, events):
         events_aggregated = {}
 
