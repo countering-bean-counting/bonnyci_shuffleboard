@@ -15,8 +15,8 @@ def main(args=None):
 
     # TODO these should be command line args
     path = '/home/auggy/dev/BonnyCI/shuffleboard_data'  # TODO env var option
-    use_etag = False
-    read_from_file = True
+    use_etag = True
+    read_from_file = False
     read_from_file_name = 'events.json'
 
     header_file = os.path.join(path, 'gh_headers')
@@ -51,15 +51,15 @@ def main(args=None):
         events_json = gh.get_events(**events_args)
         header_writer.write(gh.headers)
 
+    if 'no_events' in events_json:
+        print("No events received %s" % list(events_json.values()))
+    else:
         # dump json response to file in case something fails
         events_file = os.path.join(path, 'events.json')
         print("dumping events to file %s" % events_file)
         with open(events_file, 'w') as f:
             json.dump(events_json, f)
 
-    if 'no_events' in events_json:
-        print("No events received %s" % events_json.values())
-    else:
         events = gh.aggregate_events(events_json)
         print("Found new events, writing to %s" % path)
         writer.write(events)
