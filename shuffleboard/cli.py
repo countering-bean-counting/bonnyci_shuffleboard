@@ -55,8 +55,14 @@ def main(args=None):
             repo_folder = os.path.join(first_run_folder, repo)
             csv_writer = sb.CSVWriter(repo_folder)
 
-            entities = ['labels', 'milestones', 'issues']
-            # entities = []
+            entities = [
+                'labels',
+                'milestones',
+                'issues',
+                'pull_requests',
+                'issue_comments',
+                'pull_request_comments'
+            ]
 
             for entity in entities:
                 write_entity(entity=entity, repo_folder=repo_folder,
