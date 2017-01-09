@@ -2,6 +2,7 @@
 
 import abc
 import csv
+import collections
 import datetime as dt
 import json
 import os
@@ -44,11 +45,32 @@ class CSVWriter(Writer):
         return
 
     def build_rows(self, data=[]):
-        header_row = list(data[0].keys())
+        header_row = sorted(list(data[0].keys()))
         data_rows = []
         sheet = []
         for row in data:
-            data_rows.append(list(row.values()))
+            # Github is inconsistent which screws up the data
+            ordered_row = collections.OrderedDict(sorted(row.items()))
+
+            # missing keys get a null value
+            for k in header_row:
+                if k not in ordered_row.keys():
+                    ordered_row[k] = None
+                    ordered_row = \
+                        collections.OrderedDict(sorted(ordered_row.items()))
+
+            # handle extra keys
+            for k in row.keys():
+                if k not in header_row:
+                    header_row.append(k)
+                    header_row = sorted(header_row)
+                    # get the position for the new key
+                    i = header_row.index(k)
+                    # update the rows we've already processed
+                    for r in data_rows:
+                        r.insert(i, None)
+            data_rows.append(list(ordered_row.values()))
+
         sheet.append(header_row)
         sheet += data_rows
         return sheet
