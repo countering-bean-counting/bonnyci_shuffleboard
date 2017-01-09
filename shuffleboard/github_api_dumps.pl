@@ -2,6 +2,9 @@
 
 # Events (they only provide the last 300)
 # GET /users/:user/events
+use strict;
+use warnings;
+
 `curl -i "https://api.github.com/users/BonnyCI/events?per_page=100" >> events1.json`;
 `curl -i "https://api.github.com/users/BonnyCI/events?per_page=100&page=2" >> events2.json`;
 `curl -i "https://api.github.com/users/BonnyCI/events?per_page=100&page=3" >> events3.json`;
@@ -48,9 +51,11 @@
 # Issues
 # GET /repos/:owner/:repo/issues
 
-`curl -i "https://api.github.com/repos/BonnyCI/projman/issues?per_page=100" >> projman/issues.json`;
-`curl -i "https://api.github.com/repos/BonnyCI/shuffleboard/issues?per_page=100" >> shuffleboard/issues.json`;
-`curl -i "https://api.github.com/repos/BonnyCI/ci-plunder/issues?per_page=100" >> ci-plunder/issues.json`;
+`curl -i "https://api.github.com/repos/BonnyCI/projman/issues?per_page=100&state=all" >> projman/issues.json`;
+`curl -i "https://api.github.com/repos/BonnyCI/shuffleboard/issues?per_page=100&state=all" >> shuffleboard/issues.json`;
+`curl -i "https://api.github.com/repos/BonnyCI/ci-plunder/issues?per_page=100&state=all" >> ci-plunder/issues.json`;
+`curl -i "https://api.github.com/repos/BonnyCI/hoist/issues?per_page=100&state=all" >> hoist/issues.json`;
+`curl -i "https://api.github.com/repos/BonnyCI/zuul/issues?per_page=100&state=all" >> zuul/issues.json`;
 
 # Issue Comments
 # GET /repos/:owner/:repo/issues/comments
@@ -78,3 +83,4 @@
 `curl -i "https://api.github.com/repos/BonnyCI/zuul/pulls/comments?per_page=100" >> zuul/pull_request_comments.json`;
 
 `find . -name "*.json" | xargs sed -i '1,24 d'`;
+`find . -name "events*.json" | xargs sed -i '1,2 d'`;

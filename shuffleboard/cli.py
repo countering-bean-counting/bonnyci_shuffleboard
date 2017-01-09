@@ -16,7 +16,7 @@ import shuffleboard as sb
 def main(args=None):
 
     # TODO these should be command line args
-    project = "BonnyCI"
+    # project = "BonnyCI"
     path = '/home/auggy/dev/BonnyCI/shuffleboard_data'  # TODO env var option
     use_etag = True
     read_from_file = False
@@ -55,33 +55,12 @@ def main(args=None):
             repo_folder = os.path.join(first_run_folder, repo)
             csv_writer = sb.CSVWriter(repo_folder)
 
-            # write out labels
-            try:
-                labels_file = open(os.path.join(repo_folder, 'labels.json'), 'r')
-                labels_decoded = json.load(labels_file)
-                print("Writing labels to %s" % repo_folder)
-                labels = csv_writer.build_rows(labels_decoded)
-                csv_writer.write(filename='labels.csv', data=labels)
-            except FileNotFoundError:
-                print("labels.json not found in %s" % repo)
+            entities = ['labels', 'milestones', 'issues']
+            # entities = []
 
-            # write out milestones
-            try:
-                milestones_file = open(
-                    os.path.join(repo_folder, 'milestones.json'), 'r')
-                milestones_decoded = json.load(milestones_file)
-                if len(milestones_decoded) > 0:
-                    print("Writing milestones to %s" % repo_folder)
-                    milestones = csv_writer.build_rows(milestones_decoded)
-                    csv_writer.write(filename='milestones.csv', data=milestones)
-                else:
-                    print("No milestones found for %s" % repo)
-            except FileNotFoundError:
-                print("milestones.json not found in %s" % repo)
-
-
-
-
+            for entity in entities:
+                write_entity(entity=entity, repo_folder=repo_folder,
+                             writer=csv_writer)
 
         # don't run the rest of the script
         exit()
@@ -131,6 +110,22 @@ def main(args=None):
         print("Found new events, writing to %s" % path)
         writer.write(events)
         copyfile(events_file, os.path.join(writer.output_path, 'events.json'))
+
+
+def write_entity(entity=None, repo_folder=None, writer=None):
+    try:
+        entity_file = open(
+            os.path.join(repo_folder, entity + '.json'), 'r')
+        entity_decoded = json.load(entity_file)
+        if len(entity_decoded) > 0:
+            print("Writing %s to %s" % (entity, repo_folder))
+            entities = writer.build_rows(entity_decoded)
+            writer.write(filename=entity + '.csv', data=entities)
+        else:
+            print("No %s found in %s" % (entity, repo_folder))
+    except FileNotFoundError:
+        print("%s.json not found in %s" % (entity, repo_folder))
+    return
 
 
 if __name__ == "__main__":
