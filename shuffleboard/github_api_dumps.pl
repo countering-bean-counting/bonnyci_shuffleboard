@@ -84,3 +84,4 @@ use warnings;
 
 `find . -name "*.json" | xargs sed -i '1,24 d'`;
 `find . -name "events*.json" | xargs sed -i '1,2 d'`;
+`find . -name "commits*.json" | xargs sed -i '1,2 d'`;
