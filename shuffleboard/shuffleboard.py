@@ -30,14 +30,11 @@ class CLIWriter(Writer):
 
 class CSVWriter(Writer):
 
-    def __init__(self, output_path, csv_writer=csv.writer):
-        self.output_path = output_path
+    def __init__(self, csv_writer=csv.writer):
         self.csv_writer = csv_writer
-        # TODO: check output path exists
 
-    def write(self, filename=None, data=[]):
-        path = os.path.join(self.output_path, filename)
-        with open(path, 'w', newline='') as csvfile:
+    def write(self, file=None, data=[]):
+        with open(file, 'w', newline='') as csvfile:
             writer = self.csv_writer(csvfile, delimiter='|',
                                      quotechar='"', quoting=csv.QUOTE_MINIMAL)
             for i in data:
@@ -76,6 +73,7 @@ class CSVWriter(Writer):
         return sheet
 
 
+# TODO remove out_path, all that should be in the file arg
 class TxtFileWriter(Writer):
 
     def __init__(self, out_path=None, writer=None, filename=None):
@@ -100,6 +98,7 @@ class DBWriter(Writer):
         super()
 
 
+# TODO remove out_path, all of that should just be in the file arg
 class GhHeaderTxtFileWriter(TxtFileWriter):
     def __init__(self, filename=None, out_path=None, writer=None, *args,
                  **kwargs):
@@ -126,19 +125,21 @@ class EventsCLIWriter(CLIWriter):
 
 class EventsCSVWriter(CSVWriter):
 
-    def __init__(self, output_path, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         self.timestamp = dt.datetime.utcnow().strftime("%Y%m%d_%H%M")
-        output_path = os.path.join(output_path, 'events_' + self.timestamp)
-        super().__init__(output_path=output_path, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
-    def write(self, events):
+    def write(self, out_path=None, events=[]):
         filename_prefix = 'events_'
         sheets = self.build_rows(events)
 
-        os.makedirs(self.output_path)
+        events_out_path = os.path.join(out_path, 'events_' + self.timestamp)
+        os.makedirs(events_out_path)
+
         for (event_name, rows) in sheets.items():
-            super().write(filename=filename_prefix + event_name + '_' +
-                          self.timestamp + '.csv', data=rows)
+            filename = filename_prefix + event_name + '.csv'
+            super().write(file=os.path.join(events_out_path, filename),
+                          data=rows)
         return
 
     def build_rows(self, events):
@@ -150,6 +151,7 @@ class EventsCSVWriter(CSVWriter):
             'GollumEvent': 'payload_pages_page_name',
             'IssueCommentEvent': 'payload_issue_number',
             'IssuesEvent': 'payload_issue_number',
+            'MemberEvent': None,
             'PullRequestEvent': 'payload_pull_request_number',
             'PullRequestReviewCommentEvent': 'payload_pull_request_number',
             'PushEvent': None,
@@ -166,6 +168,7 @@ class EventsCSVWriter(CSVWriter):
                 lambda x: x['payload']['issue']['number'],
             'IssuesEvent':
                 lambda x: x['payload']['issue']['number'],
+            'MemberEvent': lambda x: None,
             'PullRequestEvent':
                 lambda x: x['payload']['pull_request']['number'],
             'PullRequestReviewCommentEvent':
