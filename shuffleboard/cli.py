@@ -19,10 +19,10 @@ def main(args=None):
     # project = "BonnyCI"
     path = '/home/auggy/dev/BonnyCI/shuffleboard_data'  # TODO env var option
     use_etag = True
-    read_from_file = True
-    read_from_file_name = 'first_run_in/events5.json'
+    read_from_file = False
+    read_from_file_name = 'events.json'
     first_run_folder = '/home/auggy/dev/BonnyCI/shuffleboard_data/first_run_in'
-    first_run = False
+    first_run = True
 
     if first_run:
 
