@@ -144,39 +144,38 @@ class EventsCSVWriter(CSVWriter):
     def build_rows(self, events):
 
         event_type_header_row_dispatch = {
-            'CreateEvent': lambda x: x,
-            'DeleteEvent': lambda x: x,
-            'ForkEvent': lambda x: x,
-            'GollumEvent': lambda x: x.append('payload_pages_page_name'),
-            'IssueCommentEvent': lambda x: x.append('payload_issue_number'),
-            'IssuesEvent': lambda x: x.append('payload_issue_number'),
-            'PullRequestEvent': lambda x: x.append(
-                'payload_pull_request_number'),
-            'PullRequestReviewCommentEvent': lambda x: x.append(
-                'payload_pull_request_number'),
-            'PushEvent': lambda x: x,
-            'WatchEvent': lambda x: x
+            'CreateEvent': None,
+            'DeleteEvent': None,
+            'ForkEvent': None,
+            'GollumEvent': 'payload_pages_page_name',
+            'IssueCommentEvent': 'payload_issue_number',
+            'IssuesEvent': 'payload_issue_number',
+            'PullRequestEvent': 'payload_pull_request_number',
+            'PullRequestReviewCommentEvent': 'payload_pull_request_number',
+            'PushEvent': None,
+            'WatchEvent': None
         }
 
         event_type_data_row_dispatch = {
-            'CreateEvent': lambda x, y: x,
-            'DeleteEvent': lambda x, y: x,
-            'ForkEvent': lambda x, y: x,
+            'CreateEvent': lambda x: None,
+            'DeleteEvent': lambda x: None,
+            'ForkEvent': lambda x: None,
             'GollumEvent':
-                lambda x, y: x.append(y['payload']['pages'][0]['page_name']),
+                lambda x: x['payload']['pages'][0]['page_name'],
             'IssueCommentEvent':
-                lambda x, y: x.append(y['payload']['issue']['number']),
+                lambda x: x['payload']['issue']['number'],
             'IssuesEvent':
-                lambda x, y: x.append(y['payload']['issue']['number']),
+                lambda x: x['payload']['issue']['number'],
             'PullRequestEvent':
-                lambda x, y: x.append(y['payload']['pull_request']['number']),
+                lambda x: x['payload']['pull_request']['number'],
             'PullRequestReviewCommentEvent':
-                lambda x, y: x.append(y['payload']['pull_request']['number']),
-            'PushEvent': lambda x, y: x,
-            'WatchEvent': lambda x, y: x
+                lambda x: x['payload']['pull_request']['number'],
+            'PushEvent': lambda x: None,
+            'WatchEvent': lambda x: None
         }
 
         sheets = {}
+        extra = None
         # split data into sheets
         for (event_name, event_list) in events.items():
             header_row = []
@@ -186,6 +185,10 @@ class EventsCSVWriter(CSVWriter):
             # build the header row
             for (k, v) in event_list[0].items():
                 header_title = k
+
+                if header_title == 'payload' and isinstance(v, str):
+                        v = json.loads(v)
+
                 if isinstance(v, dict):
                     titles = list(
                         map(lambda x: '_'.join([header_title, x]), v.keys()))
@@ -193,8 +196,14 @@ class EventsCSVWriter(CSVWriter):
                 else:
                     header_row.append(k)
 
-            event_type_header_row_dispatch[event_name](header_row)
-            sheets[event_name].append(header_row)
+            extra_key = event_type_header_row_dispatch[event_name]
+            if extra_key:
+                header_row.append(extra_key)
+                sorted_header = sorted(header_row)
+                extra = sorted_header.index(extra_key)
+                sheets[event_name].append(sorted_header)
+            else:
+                sheets[event_name].append(sorted(header_row))
 
             # build a row for the event data
             # TODO: this is pretty ugly and could be cleaned up
@@ -204,14 +213,14 @@ class EventsCSVWriter(CSVWriter):
 
                 if isinstance(e['payload'], str):
                     decoded = json.loads(e['payload'])
-                    e['payload'] = decoded
+                    e['payload'] = dict(decoded.items())
 
                 # events are a dict
-                for (key, value) in e.items():
+                for (key, value) in sorted(e.items()):
                     # the gh response has a series of keys plus a payload
                     # object with keys that vary by event type
                     if isinstance(value, dict):
-                        for (k, v) in value.items():
+                        for (k, v) in sorted(value.items()):
                             if isinstance(v, dict):
                                 # serialize any objects contained in the
                                 # payload so we don't have to do an api call
@@ -223,8 +232,9 @@ class EventsCSVWriter(CSVWriter):
                         row.append(value)
 
                 # add fields for convenience based on event type
-                event_type_data_row_dispatch[event_name](row, e)
-
+                extra_value = event_type_data_row_dispatch[event_name](e)
+                if extra_value:
+                    row.insert(extra, extra_value)
                 data_rows.append(row)
 
             sheets[event_name] += data_rows

@@ -19,10 +19,10 @@ def main(args=None):
     # project = "BonnyCI"
     path = '/home/auggy/dev/BonnyCI/shuffleboard_data'  # TODO env var option
     use_etag = True
-    read_from_file = False
-    read_from_file_name = 'events.json'
+    read_from_file = True
+    read_from_file_name = 'first_run_in/events5.json'
     first_run_folder = '/home/auggy/dev/BonnyCI/shuffleboard_data/first_run_in'
-    first_run = True
+    first_run = False
 
     if first_run:
 
@@ -88,8 +88,15 @@ def main(args=None):
         # read in json file
         events_file = os.path.join(path, read_from_file_name)
         print("reading events from file %s" % events_file)
-        with open(events_file, 'r') as f:
-            events_json = json.load(f)
+        # combine file contents into one json structure
+        f = open(events_file, 'r')
+        content = f.read()
+        if re.match('\[', content):
+            parsed_content = json.loads(content)
+            events_json = parsed_content
+        else:
+            parsed_content = '[' + '},{'.join(content.split('}\n{')) + ']'
+            events_json = json.loads(parsed_content)
 
         gh = github_api.GithubGrabber()
 
@@ -107,15 +114,16 @@ def main(args=None):
         print("No events received %s" % list(events_json.values()))
     else:
         # dump json response to file in case something fails
-        events_file = os.path.join(path, 'events.json')
-        print("dumping events to file %s" % events_file)
-        with open(events_file, 'w') as f:
+        events_out_file = os.path.join(path, 'events.json')
+        print("dumping events to file %s" % events_out_file)
+        with open(events_out_file, 'w') as f:
             json.dump(events_json, f)
 
         events = gh.aggregate_events(events_json)
         print("Found new events, writing to %s" % path)
         writer.write(events)
-        copyfile(events_file, os.path.join(writer.output_path, 'events.json'))
+        copyfile(events_out_file, os.path.join(writer.output_path,
+                                               'events.json'))
 
 
 def write_entity(entity=None, repo_folder=None, writer=None):
