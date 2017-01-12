@@ -52,14 +52,15 @@ class TestGithubGrabber(unittest.TestCase):
         expected = MockGithubClient().event
         http_fake = self._get([expected])
         grabber = github_api.GithubGrabber(http_client=http_fake)
-        events = grabber.aggregate_events(grabber.get_events())
+        events = grabber.get_events()
 
         # check that our return structure is keyed on event type
-        self.assertTrue('Caturday' in events,
+        self.assertEqual(events[0]['type'], 'Caturday',
                         msg="%s not in events data" % expected['type'])
-        self.assertEqual(len(events['Caturday']), 1)
+        self.assertEqual(len(events), 1)
 
-        got = events['Caturday'][0]
+        # TODO fix this
+        got = events[0]
 
         for e in expected:
             # check that we didn't drop any fields
