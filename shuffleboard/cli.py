@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import click
-from shutil import copyfile
-import glob
+# from shutil import copyfile
 import json
 import os
 import re
-import requests
+# import requests
 
-import github_api
+# import github_api
 import shuffleboard as sb
 
 
@@ -18,10 +17,10 @@ def main(args=None):
     # TODO these should be command line args
     # for updating an existing project based on event activity
     # project = "BonnyCI"
-    path = '/home/auggy/dev/BonnyCI/shuffleboard_data'  # TODO env var option
-    use_etag = True
-    read_from_file = False
-    read_from_file_name = 'events.json'
+    # path = '/home/auggy/dev/BonnyCI/shuffleboard_data'  # TODO env var option
+    # use_etag = True
+    # read_from_file = False
+    # read_from_file_name = 'events.json'
 
     # for creating a new github archive sample set
     # currently assumes data for each repo is stored in a folder structure
@@ -50,11 +49,11 @@ def main(args=None):
             # check if it's a user level directory
             if end in users:
                 user = end
-                folders[user] = {'repos': {r : None for r in row[1]},
-                                 **walk_data }
+                folders[user] = {'repos': {r: None for r in row[1]},
+                                 **walk_data}
             else:
                 path2, end2 = os.path.split(path)
-                if end2 in users: # check if it's a repo level one
+                if end2 in users:  # check if it's a repo level one
                     user = end2
                     repo = end
                     # double check this is a legit repo
@@ -68,23 +67,21 @@ def main(args=None):
             gh_archive_user_folder = walk_data['path']
             event_files = \
                 [os.path.join(gh_archive_user_folder, f)
-                for f in walk_data['files']
-                if os.path.splitext(f)[0][:5] == 'event'
-                and os.path.splitext(f)[1] == '.json']
+                 for f in walk_data['files']
+                 if os.path.splitext(f)[0][:5] == 'event'
+                 and os.path.splitext(f)[1] == '.json']
 
             events_list = get_entity_list(event_files)
 
-            gh = github_api.GithubGrabber()
             print("Writing events to %s" % gh_archive_user_folder)
-            events = gh.aggregate_events(events_list)
             events_writer = sb.EventsCSVWriter()
+            events = events_writer.aggregate_events(events_list)
             events_writer.write(out_path=gh_archive_user_folder,
                                 events=events)
 
             # for each directory
             for repo, repo_walk_data in walk_data['repos'].items():
                 repo_folder = repo_walk_data['path']
-                csv_writer = sb.CSVWriter(repo_folder)
 
                 # create a list of json files keyed by entity
                 # if we have a lot of values, the github api limits how many
@@ -106,11 +103,11 @@ def main(args=None):
 
                 for entity, entity_file_list in entity_files.items():
                     print("Processing %s for repo %s" % (entity, repo))
-                    if len(entity_file_list) == 1: # just one data file
+                    if len(entity_file_list) == 1:  # just one data file
                         entity_file = entity_file_list[0]
                         write_entity(entity_file=entity_file,
                                      writer=sb.CSVWriter())
-                    else: # multiple files need to be combined
+                    else:  # multiple files need to be combined
                         entity_writer = sb.CSVWriter()
                         entities = entity_writer.build_rows(
                             get_entity_list(entity_file_list))

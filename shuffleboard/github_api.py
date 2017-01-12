@@ -33,17 +33,3 @@ class GithubGrabber:
             return {'no_events': response}
         else:
             return response.json()
-
-# TODO this might belong in the shuffleboard class, not here
-    def aggregate_events(self, events):
-        events_aggregated = {}
-
-        for e in events:
-            event_type = e['type']
-
-            if event_type not in events_aggregated:
-                events_aggregated[event_type] = [e]
-            else:
-                events_aggregated[event_type].append(e)
-
-        return events_aggregated

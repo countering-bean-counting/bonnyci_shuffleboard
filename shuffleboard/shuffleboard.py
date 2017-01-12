@@ -244,6 +244,19 @@ class EventsCSVWriter(CSVWriter):
 
         return sheets
 
+    def aggregate_events(self, events):
+        events_aggregated = {}
+
+        for e in events:
+            event_type = e['type']
+
+            if event_type not in events_aggregated:
+                events_aggregated[event_type] = [e]
+            else:
+                events_aggregated[event_type].append(e)
+
+        return events_aggregated
+
 
 class EventsTxtFileWriter(TxtFileWriter):
     # TODO dump response to a text file in case of parsing issues
