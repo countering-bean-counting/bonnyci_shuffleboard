@@ -22,6 +22,7 @@ HOME = os.getenv("HOME")
 @click.option('--owner', help='Org or user for the repo')
 @click.option('--repo', help='The repo name (no user or org)')
 def main(gh_api, json2csv, gh_path, owner, repo):
+
     if gh_api:
         # make folder for project
         repo_folder = os.path.join(gh_path, owner, repo)
@@ -106,12 +107,15 @@ def main(gh_api, json2csv, gh_path, owner, repo):
 
                 for entity, entity_file_list in entity_files.items():
                     print("Processing %s for repo %s" % (entity, repo))
+                    if entity in sb.writer_lookup:
+                        entity_writer = sb.writer_lookup[entity]
+                    else:
+                        entity_writer = sb.CSVWriter()
                     if len(entity_file_list) == 1:  # just one data file
                         entity_file = entity_file_list[0]
                         write_entity(entity_file=entity_file,
-                                     writer=sb.CSVWriter())
+                                     writer=entity_writer)
                     else:  # multiple files need to be combined
-                        entity_writer = sb.CSVWriter()
                         entities = entity_writer.build_rows(
                             get_entity_list(entity_file_list))
                         entity_writer.write(file=os.path.join(
