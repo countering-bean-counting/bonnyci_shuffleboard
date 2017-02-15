@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import abc
+import base64
 import csv
 import collections
 import datetime as dt
 import json
 import os
 
+# TODO: this should be more composable
 
 # abstract class to define an interface for different outputs
 class Writer(object):
@@ -43,6 +45,7 @@ class CSVWriter(Writer):
 
     def build_rows(self, data=[]):
         header_row = sorted(list(data[0].keys()))
+
         data_rows = []
         sheet = []
         for row in data:
@@ -268,3 +271,107 @@ class EventsDBWriter(DBWriter):
     # TODO implement db writes for events
     def __init__(self):
         pass
+
+
+class DictCSVWriter(CSVWriter):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def build_rows(self, data={}):
+        header_row = list(data.keys())
+        data_row = list(data.values())
+        sheet = [header_row, data_row]
+        return sheet
+
+
+# JSON obj where the key is a data column
+class KeyAsColumnDictCSVWriter(CSVWriter):
+
+    def __init__(self, header_row=[], *args, **kwargs):
+        self.header_row = header_row
+        super().__init__(*args, **kwargs)
+
+    def build_rows(self, data={}):
+        data_rows = []
+        sheet = []
+
+        for k, v in data.items():
+            data_rows.append([k, v])
+
+        sheet.append(self.header_row)
+        sheet += data_rows
+        return sheet
+
+
+# JSON obj where columns contain JSON objects
+class ListOfDictsCSVWriter(CSVWriter):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def build_rows(self, data=[]):
+        sheet = []
+
+        # build the header row
+        header_row = []
+        for (key, value) in data[0].items():
+            header_title = key
+
+            if isinstance(value, dict):
+                titles = list(
+                    map(lambda x: '_'.join([header_title, x]), value.keys()))
+                header_row += titles
+            else:
+                header_row.append(key)
+
+        sheet.append(sorted(header_row))
+
+        # build the data rows
+        data_rows = []
+        for i in data:
+            row = []
+            for (key, value) in sorted(i.items()):
+                # extract dictionary items
+                if isinstance(value, dict):
+                    for (k, v) in sorted(value.items()):
+                        if isinstance(v, dict):
+                            row.append(json.dumps(dict(sorted(v.items()))))
+                        else:
+                            row.append(v)
+                else:
+                    row.append(value)
+
+            data_rows.append(row)
+
+        sheet += data_rows
+        return sheet
+
+
+class Base64DictCSVWriter(CSVWriter):
+
+    def __init__(self, fields=[], *args, **kwargs):
+
+        # {field:type}
+        self.fields = fields
+
+        super().__init__(*args, **kwargs)
+
+    def build_rows(self, data={}):
+        header_row = list(data.keys())
+
+        for field in self.fields:
+            data[field] = str(base64.b64decode(data[field]))
+
+        data_row = list(data.values())
+
+        sheet = [header_row, data_row]
+        return sheet
+
+
+writer_lookup = {
+    'repo_languages': KeyAsColumnDictCSVWriter(header_row=['language', 'loc']),
+    'repo_owner': DictCSVWriter(),
+    'repo_data': DictCSVWriter(),
+    'repo_contributors': ListOfDictsCSVWriter(),
+    'repo_readme': Base64DictCSVWriter(fields=['content'])
+}
