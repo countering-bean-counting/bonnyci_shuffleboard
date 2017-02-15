@@ -23,7 +23,9 @@ HOME = os.getenv("HOME")
                                'username/repo')
 @click.option('--owner', help='Org or user for the repo')
 @click.option('--repo', help='The repo name (no user or org)')
-def main(gh_api, json2csv, gh_path, repos_file, owner, repo):
+@click.option('--gh_id', help='GitHub OATH2 client id')
+@click.option('--gh_secret', help='GitHub OATH2 secret')
+def main(gh_api, json2csv, gh_path, repos_file, owner, repo, gh_id, gh_secret):
 
     # build repo list
     repos = []
@@ -38,7 +40,11 @@ def main(gh_api, json2csv, gh_path, repos_file, owner, repo):
 
     if gh_api:
         for r in repos:
-            do_gh_api(repo=r['repo'], owner=r['owner'], gh_path=gh_path)
+            do_gh_api(repo = r['repo'],
+                      owner = r['owner'],
+                      gh_path = gh_path,
+                      params = {'client_id': gh_id, 'client_secret': gh_secret}
+                      )
 
     if json2csv:
         # currently assumes data for each repo is stored in a folder structure
@@ -162,7 +168,7 @@ def get_entity_list(entity_files):
 
 # TODO: break this up into something more modular
 # this is literally a sloppy copy pasta job
-def do_gh_api(repo='', owner='', gh_path=''):
+def do_gh_api(repo='', owner='', gh_path='', params={}, headers={}):
     # make folder for project
     repo_folder = os.path.join(gh_path, owner, repo)
     os.makedirs(repo_folder, exist_ok=True)
@@ -170,7 +176,9 @@ def do_gh_api(repo='', owner='', gh_path=''):
     gh = github_api.GithubGrabber(
         http_client=requests,
         owner=owner,
-        repo=repo
+        repo=repo,
+        params=params,
+        headers=headers
     )
 
     repo_result = gh.get_all()
