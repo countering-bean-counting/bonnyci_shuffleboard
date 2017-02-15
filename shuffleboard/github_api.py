@@ -5,7 +5,8 @@
 
 class GithubGrabber:
     def __init__(self,
-                 page=100,
+                 params = {},
+                 headers = {},
                  owner='',
                  repo = '',
                  http_client=None,
@@ -15,8 +16,8 @@ class GithubGrabber:
         self.repo = repo
         self.gh_api_base = gh_api_base
         self.http_client = http_client
-        self.page = 100
-        self.headers = {}
+        self.params = params
+        self.headers = headers
 
         self.endpoint_lookup = {
             'repo_owner': '/users/%s' % self.owner,
@@ -29,24 +30,26 @@ class GithubGrabber:
                 '/repos/%s/%s/stats/contributors' % (self.owner, self.repo)
         }
 
-    def _get(self, url, headers={}):
-        response = self.http_client.get(url, headers=headers)
-        self.headers = response.headers
+    def _get(self, url):
+        response = self.http_client.get(url,
+                                        headers=self.headers,
+                                        params=self.params)
+        self.resp_headers = response.headers
         return response
 
-    def get_entity(self, headers={}, entity=''):
-        endpoint = self.endpoint_lookup[entity] # host is turning into host='api.github.comrepos', port=443): Max retries exceeded with url: /BonnyCI/hoist/stats/contributors
-        response = self._get(self.gh_api_base + endpoint,
-                             headers=headers)
+    def get_entity(self, entity=''):
+        endpoint = self.endpoint_lookup[entity]
+        response = self._get(self.gh_api_base + endpoint)
         if response.status_code != 200:
-            return {'no_%s' % entity: response}
+            return {'no_%s' % entity: "%s %s" %
+                                      (str(response.status_code), response)}
         else:
             return response.json()
 
-    def get_all(self, headers={}):
+    def get_all(self):
         result = {}
         for entity in self.endpoint_lookup.keys():
-            result[entity] = self.get_entity(entity=entity, headers=headers)
+            result[entity] = self.get_entity(entity=entity)
         return result
 
     # TODO: update this to use get_entity
