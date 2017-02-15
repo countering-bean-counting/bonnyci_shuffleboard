@@ -5,33 +5,49 @@ import click
 import json
 import os
 import re
-# import requests
+import requests
 
-# import github_api
+import github_api
 import shuffleboard as sb
 
+HOME = os.getenv("HOME")
 
 @click.command()
-def main(args=None):
+@click.option('--gh_api', default=False,
+              help='Get project data via GitHub API')
+@click.option('--json2csv', default=False,
+              help='Convert GitHub API JSON to CSV')
+@click.option('--gh_path', default=HOME,
+              help='Path for JSON data')
+@click.option('--owner', help='Org or user for the repo')
+@click.option('--repo', help='The repo name (no user or org)')
+def main(gh_api, json2csv, gh_path, owner, repo):
+    if gh_api:
+        # make folder for project
+        repo_folder = os.path.join(gh_path, owner, repo)
+        os.makedirs(repo_folder, exist_ok=True)
 
-    # TODO these should be command line args
-    # for updating an existing project based on event activity
-    # project = "BonnyCI"
-    # path = '/home/auggy/dev/BonnyCI/shuffleboard_data'  # TODO env var option
-    # use_etag = True
-    # read_from_file = False
-    # read_from_file_name = 'events.json'
+        gh = github_api.GithubGrabber(
+            http_client=requests,
+            owner = owner,
+            repo = repo
+        )
 
-    # for creating a new github archive sample set
-    # currently assumes data for each repo is stored in a folder structure
-    #  with user or org as top level and all repos at the next level
-    # if the repo belongs to an org, the topmost folder must be the org name
-    gh_archive_folder = '/home/auggy/dev/BonnyCI/shuffleboard_data/gh_archive'
-    gh_archive_import = True
+        repo_result = gh.get_all()
+        for (entity, resp) in repo_result.items():
+            out_file = os.path.join(repo_folder, entity + '.json')
+            print("dumping %s results to file %s" % (entity, out_file))
+            with open(out_file, 'w') as f:
+                json.dump(resp, f)
 
-    if gh_archive_import:
+    if json2csv:
+        # currently assumes data for each repo is stored in a folder structure
+        #  with user or org as top level and all repos at the next level
+        # if the repo belongs to an org, the topmost folder must be the org
+        # name
+
         # get a list of all folders at the top level of the directory
-        # these should be organizations and usernames
+        gh_archive_folder = gh_path
         walk = tuple(os.walk(gh_archive_folder))
         users = walk[0][1]
 
@@ -48,36 +64,23 @@ def main(args=None):
             path, end = os.path.split(row[0])
             # check if it's a user level directory
             if end in users:
-                user = end
-                folders[user] = {'repos': {r: None for r in row[1]},
-                                 **walk_data}
+                owner = end
+                folders[owner] = {'repos': {r: None for r in row[1]},
+                                  **walk_data}
             else:
                 path2, end2 = os.path.split(path)
                 if end2 in users:  # check if it's a repo level one
-                    user = end2
+                    owner = end2
                     repo = end
                     # double check this is a legit repo
-                    if repo in folders[user]['repos'] and len(row[2]) > 0:
-                        folders[user]['repos'][repo] = walk_data
+                    if repo in folders[owner]['repos'] and len(row[2]) > 0:
+                        folders[owner]['repos'][repo] = walk_data
                 else:
                     print("didn't recognize path as user or repo: %s" % row[0])
 
-        for user, walk_data in folders.items():
-            # make a list of files that start with "event" and end with "json"
-            gh_archive_user_folder = walk_data['path']
-            event_files = \
-                [os.path.join(gh_archive_user_folder, f)
-                 for f in walk_data['files']
-                 if os.path.splitext(f)[0][:5] == 'event'
-                 and os.path.splitext(f)[1] == '.json']
-
-            events_list = get_entity_list(event_files)
-
-            print("Writing events to %s" % gh_archive_user_folder)
-            events_writer = sb.EventsCSVWriter()
-            events = events_writer.aggregate_events(events_list)
-            events_writer.write(out_path=gh_archive_user_folder,
-                                events=events)
+        for owner, walk_data in folders.items():
+            # NOTE: removed events section because we can get events data from
+            # Google BigQuery
 
             # for each directory
             for repo, repo_walk_data in walk_data['repos'].items():
@@ -113,67 +116,6 @@ def main(args=None):
                             get_entity_list(entity_file_list))
                         entity_writer.write(file=os.path.join(
                             repo_folder, entity + '.csv'), data=entities)
-
-    # don't run the rest of the script
-    exit("Finished")
-
-# TODO: this code doesn't work anymore
-    # # TODO move logic to get continuous updates to a new cli program
-    # # TODO fix this to take in a list of user/repo's and an optional list of
-    # #  entities to pull via the api
-    # header_file = os.path.join(path, 'gh_headers')
-    # with open(header_file, 'r') as f:
-    #     last_headers = json.load(f)
-    #     etag = last_headers["ETag"][2:]
-    #
-    # # TODO set the writer instance type based on command line args
-    # # cli_writer = sb.EventsCLIWriter(printer=print)
-    # csv_writer = sb.EventsCSVWriter(out_path=path)
-    # writer = csv_writer
-    #
-    # header_writer = sb.GhHeaderTxtFileWriter(out_path=path,
-    #                                          filename='gh_headers')
-    #
-    # if read_from_file:
-    #     # read in json file
-    #     events_file = os.path.join(path, read_from_file_name)
-    #     print("reading events from file %s" % events_file)
-    #     # combine file contents into one json structure
-    #     f = open(events_file, 'r')
-    #     content = f.read()
-    #     if re.match('\[', content):
-    #         parsed_content = json.loads(content)
-    #         events_json = parsed_content
-    #     else:
-    #         parsed_content = '[' + '},{'.join(content.split('}\n{')) + ']'
-    #         events_json = json.loads(parsed_content)
-    #
-    #     gh = github_api.GithubGrabber()
-    #
-    # else:
-    #     gh = github_api.GithubGrabber(http_client=requests)
-    #
-    #     events_args = {}
-    #     if use_etag:
-    #         events_args['etag'] = etag
-    #
-    #     events_json = gh.get_events(**events_args)
-    #     header_writer.write(gh.headers)
-    #
-    # if 'no_events' in events_json:
-    #     print("No events received %s" % list(events_json.values()))
-    # else:
-    #     # dump json response to file in case something fails
-    #     events_out_file = os.path.join(path, 'events.json')
-    #     print("dumping events to file %s" % events_out_file)
-    #     with open(events_out_file, 'w') as f:
-    #         json.dump(events_json, f)
-    #
-    #     events = gh.aggregate_events(events_json)
-    #     print("Found new events, writing to %s" % path)
-    #     writer.write(events)
-    #     copyfile(events_out_file, os.path.join(writer.output_path,
-    #                                            'events.json'))
 
 
 def write_entity(repo_path=None, entity_file=None, writer=None):
