@@ -19,27 +19,26 @@ HOME = os.getenv("HOME")
               help='Convert GitHub API JSON to CSV')
 @click.option('--gh_path', default=HOME,
               help='Path for JSON data')
+@click.option('--repos_file', help='File containing a list of repos: '
+                               'username/repo')
 @click.option('--owner', help='Org or user for the repo')
 @click.option('--repo', help='The repo name (no user or org)')
-def main(gh_api, json2csv, gh_path, owner, repo):
+def main(gh_api, json2csv, gh_path, repos_file, owner, repo):
+
+    # build repo list
+    repos = []
+    if repos_file:
+        f = open(os.path.join(gh_path, repos_file), 'r')
+        repo_list = f.read().splitlines()
+        for r in repo_list:
+            (owner, repo) = r.split('/')
+            repos.append({'owner': owner, 'repo': repo})
+    else:
+        repos.append({'owner': owner, 'repo': repo})
 
     if gh_api:
-        # make folder for project
-        repo_folder = os.path.join(gh_path, owner, repo)
-        os.makedirs(repo_folder, exist_ok=True)
-
-        gh = github_api.GithubGrabber(
-            http_client=requests,
-            owner = owner,
-            repo = repo
-        )
-
-        repo_result = gh.get_all()
-        for (entity, resp) in repo_result.items():
-            out_file = os.path.join(repo_folder, entity + '.json')
-            print("dumping %s results to file %s" % (entity, out_file))
-            with open(out_file, 'w') as f:
-                json.dump(resp, f)
+        for r in repos:
+            do_gh_api(repo=r['repo'], owner=r['owner'], gh_path=gh_path)
 
     if json2csv:
         # currently assumes data for each repo is stored in a folder structure
@@ -159,6 +158,31 @@ def get_entity_list(entity_files):
                 json.loads('[' + '},{'.join(content.split('}\n{')) + ']')
         entity_list += parsed_content
     return entity_list
+
+
+# TODO: break this up into something more modular
+# this is literally a sloppy copy pasta job
+def do_gh_api(repo='', owner='', gh_path=''):
+    # make folder for project
+    repo_folder = os.path.join(gh_path, owner, repo)
+    os.makedirs(repo_folder, exist_ok=True)
+
+    gh = github_api.GithubGrabber(
+        http_client=requests,
+        owner=owner,
+        repo=repo
+    )
+
+    repo_result = gh.get_all()
+    for (entity, resp) in repo_result.items():
+        out_file = os.path.join(repo_folder, entity + '.json')
+        print("dumping %s results to file %s" % (entity, out_file))
+        with open(out_file, 'w') as f:
+            try:
+                json.dump(resp, f)
+            except:
+                print("unable to serialize %s" % resp)
+    return
 
 
 if __name__ == "__main__":
