@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import click
+import csv
 # from shutil import copyfile
 import json
 import os
@@ -25,7 +26,10 @@ HOME = os.getenv("HOME")
 @click.option('--repo', help='The repo name (no user or org)')
 @click.option('--gh_id', help='GitHub OATH2 client id')
 @click.option('--gh_secret', help='GitHub OATH2 secret')
-def main(gh_api, json2csv, gh_path, repos_file, owner, repo, gh_id, gh_secret):
+@click.option('--catcsv', default=False,
+              help='Combine CSV files with the same name into one')
+def main(gh_api, json2csv, gh_path, repos_file, owner, repo, gh_id,
+         gh_secret, catcsv):
 
     # build repo list
     repos = []
@@ -46,11 +50,13 @@ def main(gh_api, json2csv, gh_path, repos_file, owner, repo, gh_id, gh_secret):
                       params = {'client_id': gh_id, 'client_secret': gh_secret}
                       )
 
-    if json2csv:
+    if json2csv or catcsv:
         # currently assumes data for each repo is stored in a folder structure
         #  with user or org as top level and all repos at the next level
         # if the repo belongs to an org, the topmost folder must be the org
         # name
+
+        csv_files = {}
 
         # get a list of all folders at the top level of the directory
         gh_archive_folder = gh_path
@@ -112,39 +118,115 @@ def main(gh_api, json2csv, gh_path, repos_file, owner, repo, gh_id, gh_secret):
 
                 for entity, entity_file_list in entity_files.items():
                     print("Processing %s for repo %s" % (entity, repo))
-                    if entity in sb.writer_lookup:
-                        entity_writer = sb.writer_lookup[entity]
-                    else:
-                        entity_writer = sb.CSVWriter()
+                    if json2csv:
+                        if entity in sb.writer_lookup:
+                            entity_writer = sb.writer_lookup[entity]
+                        else:
+                            entity_writer = sb.CSVWriter()
                     if len(entity_file_list) == 1:  # just one data file
                         entity_file = entity_file_list[0]
-                        write_entity(entity_file=entity_file,
-                                     writer=entity_writer)
+                        if catcsv:
+                            entity_filename, ext = \
+                                os.path.splitext(entity_file)
+
+                            if entity in csv_files:
+                                csv_files[entity].append(entity_filename +
+                                                         '.csv')
+                            else:
+                                csv_files[entity] = [entity_filename + '.csv']
+                        if json2csv:
+                            write_entity(entity_file=entity_file,
+                                         writer=entity_writer)
                     else:  # multiple files need to be combined
-                        entities = entity_writer.build_rows(
-                            get_entity_list(entity_file_list))
-                        entity_writer.write(file=os.path.join(
-                            repo_folder, entity + '.csv'), data=entities)
+                        if json2csv:
+                            entities = entity_writer.build_rows(
+                                get_entity_list(entity_file_list))
+                            entity_writer.write(file=os.path.join(
+                                repo_folder, entity + '.csv'), data=entities)
+
+    if catcsv:
+        for entity, files in csv_files.items():
+            print("Combining csv files for %s " % entity)
+
+            header_row = []
+            csv_combined = []
+            null_repos = []
+            for file in files:
+                print("Reading in %s " % file)
+
+                # get the owner and repo name
+                filepath, filename = os.path.split(file)
+                path, repo = os.path.split(filepath)
+                path, owner = os.path.split(path)
+                repo_slug = "%s/%s" % (repo, owner)
+
+                # read in csv file contents
+                try:
+                    f = open(file, 'r')
+                    file_contents = csv.reader(f, delimiter=',', quotechar='"')
+
+                # if a json file doesn't have an associated csv file,
+                # it means there wasn't data for that repo. We need to add
+                # this in later as a row of null values
+                except FileNotFoundError:
+                    print("%s not found" % file)
+                    null_repos.append(repo_slug)
+                    continue
+
+                # if this is the first entry, keep the header row
+                next_row = file_contents.__next__()
+                if len(csv_combined) == 0:
+                    header_row = next_row
+                    header_row.append("repo_slug")
+                    csv_combined.append(header_row)
+                else:
+                    for row in file_contents:
+                        row.append(repo_slug)
+                        csv_combined.append(row)
+
+            # add rows for null repos
+            for r in null_repos:
+                null_row = []
+                # add a blank value for each column except the last one
+                for i in header_row[:-1]:
+                    null_row.append("")
+                # tack on the repo slug
+                null_row.append(r)
+                # add the row for that repo to the main spreadsheet
+                csv_combined.append(null_row)
+
+            # write to gh_archive_folder
+            catcsv_file = os.path.join(gh_archive_folder, filename)
+            with open(catcsv_file, 'w') as f:
+                print("Writing combined csv file %s " % catcsv_file)
+                writer = csv.writer(f, delimiter=',',
+                                    quotechar='"', quoting=csv.QUOTE_ALL)
+                for row in csv_combined:
+                    writer.writerow(row)
 
 
-def write_entity(repo_path=None, entity_file=None, writer=None):
+def write_entity(entity_file=None, writer=None):
+    entity_filename, ext = os.path.splitext(entity_file)
+    repo_path, entity = os.path.split(entity_filename)
+    entity_csv_file = entity_filename + '.csv'
+
     try:
-        file = open(entity_file, 'r')
-        entity_decoded = json.load(file)
-        if len(entity_decoded) > 0:
-            entity, ext = os.path.splitext(entity_file)
-            print("Writing %s" % entity + '.csv')
+        json_file = open(entity_file, 'r')
+        entity_decoded = json.load(json_file)
+        if (len(entity_decoded) > 0) and 'no_' + entity not in entity_decoded:
+            print("Writing %s" % entity_csv_file)
             entities = writer.build_rows(entity_decoded)
-            writer.write(file=os.path.join(repo_path, entity + '.csv'),
+            writer.write(file=entity_csv_file,
                          data=entities)
         else:
+            # TODO: write a csv file with the entity name
             print("empty json file %s" % entity_file)
     except FileNotFoundError:
         print("%s not found" % entity_file)
     except json.decoder.JSONDecodeError:
         print("json decoding error for %s: %s"
               % (entity_file, json.decoder.JSONDecodeError))
-    return
+    return entity_csv_file
 
 
 def get_entity_list(entity_files):
