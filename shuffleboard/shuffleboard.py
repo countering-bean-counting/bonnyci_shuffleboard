@@ -37,8 +37,8 @@ class CSVWriter(Writer):
 
     def write(self, file=None, data=[]):
         with open(file, 'w', newline='') as csvfile:
-            writer = self.csv_writer(csvfile, delimiter='|',
-                                     quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            writer = self.csv_writer(csvfile, delimiter=',',
+                                     quotechar='"', quoting=csv.QUOTE_ALL)
             for i in data:
                 writer.writerow(i)
         return
@@ -273,14 +273,37 @@ class EventsDBWriter(DBWriter):
         pass
 
 
+# repos with an org have an extra "organization" column
+class RepoDataCSVWriter(CSVWriter):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.extra_fields = [
+            "organization",
+            "parent",
+            "source"
+        ]
+
+    def build_rows(self, data={}):
+        for field in self.extra_fields:
+            if field not in data.keys():
+                data[field] = ""
+
+        ordered_data = sorted(data.items())
+        header_row = list(i[0] for i in ordered_data)
+        data_row = list(i[1] for i in ordered_data)
+        sheet = [header_row, data_row]
+        return sheet
+
+
 class DictCSVWriter(CSVWriter):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def build_rows(self, data={}):
-        header_row = list(data.keys())
-        data_row = list(data.values())
+        ordered_data = sorted(data.items())
+        header_row = list(i[0] for i in ordered_data)
+        data_row = list(i[1] for i in ordered_data)
         sheet = [header_row, data_row]
         return sheet
 
@@ -293,10 +316,12 @@ class KeyAsColumnDictCSVWriter(CSVWriter):
         super().__init__(*args, **kwargs)
 
     def build_rows(self, data={}):
+        ordered_data = sorted(data.items())
+
         data_rows = []
         sheet = []
 
-        for k, v in data.items():
+        for k, v in ordered_data:
             data_rows.append([k, v])
 
         sheet.append(self.header_row)
@@ -314,7 +339,7 @@ class ListOfDictsCSVWriter(CSVWriter):
 
         # build the header row
         header_row = []
-        for (key, value) in data[0].items():
+        for (key, value) in sorted(data[0].items()):
             header_title = key
 
             if isinstance(value, dict):
@@ -371,7 +396,7 @@ class Base64DictCSVWriter(CSVWriter):
 writer_lookup = {
     'repo_languages': KeyAsColumnDictCSVWriter(header_row=['language', 'loc']),
     'repo_owner': DictCSVWriter(),
-    'repo_data': DictCSVWriter(),
+    'repo_data': RepoDataCSVWriter(),
     'repo_contributors': ListOfDictsCSVWriter(),
     'repo_readme': Base64DictCSVWriter(fields=['content'])
 }
