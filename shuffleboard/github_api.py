@@ -25,9 +25,7 @@ class GithubGrabber:
             'repo_releases': '/repos/%s/%s/releases' % (self.owner, self.repo),
             'repo_readme': '/repos/%s/%s/readme' % (self.owner, self.repo),
             'repo_languages':
-                '/repos/%s/%s/languages' % (self.owner, self.repo),
-            'repo_contributors':
-                '/repos/%s/%s/stats/contributors' % (self.owner, self.repo)
+                '/repos/%s/%s/languages' % (self.owner, self.repo)
         }
 
     def _get(self, url):
