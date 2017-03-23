@@ -7,10 +7,12 @@ import json
 import os
 import re
 import requests
+import sys
 
 import github_api
 import shuffleboard as sb
 
+csv.field_size_limit(sys.maxsize)
 HOME = os.getenv("HOME")
 
 @click.command()
