@@ -280,7 +280,11 @@ class RepoDataCSVWriter(CSVWriter):
         self.extra_fields = [
             "organization",
             "parent",
-            "source"
+            "source",
+            "is_deleted", # custom fields added for manually fetched repo data
+            "last_event_at",
+            "last_event_type",
+            "create_event_type"
         ]
 
     def build_rows(self, data={}):
