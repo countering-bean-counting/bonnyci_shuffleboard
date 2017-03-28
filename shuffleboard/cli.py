@@ -158,9 +158,9 @@ def main(gh_api, json2csv, gh_path, repos_file, owner, repo, gh_id,
 
                 # get the owner and repo name
                 filepath, filename = os.path.split(file)
-                path, repo = os.path.split(filepath)
-                path, owner = os.path.split(path)
-                repo_slug = "%s/%s" % (repo, owner)
+                path, repo_slug2 = os.path.split(filepath)
+                path, repo_slug1 = os.path.split(path)
+                repo_slug = "%s/%s" % (repo_slug1, repo_slug2)
 
                 # read in csv file contents
                 try:
@@ -179,21 +179,22 @@ def main(gh_api, json2csv, gh_path, repos_file, owner, repo, gh_id,
                 next_row = file_contents.__next__()
                 if len(csv_combined) == 0:
                     header_row = next_row
-                    header_row.append("repo_slug")
+                    header_row += ["repo_slug", "repo_slug1", "repo_slug2"]
                     csv_combined.append(header_row)
                 else:
                     for row in file_contents:
-                        row.append(repo_slug)
+                        row += [repo_slug, repo_slug1, repo_slug2]
                         csv_combined.append(row)
 
             # add rows for null repos
             for r in null_repos:
                 null_row = []
                 # add a blank value for each column except the last one
-                for i in header_row[:-1]:
+                for i in header_row[:-3]:
                     null_row.append("")
                 # tack on the repo slug
-                null_row.append(r)
+                repo_slug1, repo_slug2 = r.split('/')
+                null_row += [r, repo_slug1, repo_slug2]
                 # add the row for that repo to the main spreadsheet
                 csv_combined.append(null_row)
 
