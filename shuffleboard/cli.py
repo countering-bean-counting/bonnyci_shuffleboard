@@ -185,10 +185,10 @@ def main(gh_api, json2csv, gh_path, repos_file, owner, repo, gh_id,
                     header_row = next_row
                     header_row += ["repo_slug", "repo_slug1", "repo_slug2"]
                     csv_combined.append(header_row)
-                else:
-                    for row in file_contents:
-                        row += [repo_slug, repo_slug1, repo_slug2]
-                        csv_combined.append(row)
+
+                for row in file_contents:
+                    row += [repo_slug, repo_slug1, repo_slug2]
+                    csv_combined.append(row)
 
             # add rows for null repos
             for r in null_repos:
