@@ -75,16 +75,20 @@ def main(gh_api, json2csv, gh_path, repos_file, owner, repo, gh_id,
                 'walk_idx': idx
             }
 
-            path, end = os.path.split(row[0])
+            # get the current directory
+            path1, end = os.path.split(row[0])
+            # get the parent directory for comparison
+            path2, parent = os.path.split(path1)
+
             # check if it's a user level directory
-            if end in users:
+            # exclude repos with the same name as the user
+            if (end in users) and (parent != end):
                 owner = end
                 folders[owner] = {'repos': {r: None for r in row[1]},
                                   **walk_data}
             else:
-                path2, end2 = os.path.split(path)
-                if end2 in users:  # check if it's a repo level one
-                    owner = end2
+                if parent in users:  # check if it's a repo level one
+                    owner = parent
                     repo = end
                     # double check this is a legit repo
                     if repo in folders[owner]['repos'] and len(row[2]) > 0:
