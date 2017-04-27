@@ -46,10 +46,10 @@ def main(gh_api, json2csv, gh_path, repos_file, owner, repo, gh_id,
 
     if gh_api:
         for r in repos:
-            do_gh_api(repo = r['repo'],
-                      owner = r['owner'],
-                      gh_path = gh_path,
-                      params = {'client_id': gh_id, 'client_secret': gh_secret}
+            do_gh_api(repo=r['repo'],
+                      owner=r['owner'],
+                      gh_path=gh_path,
+                      params={'client_id': gh_id, 'client_secret': gh_secret}
                       )
 
     if json2csv or catcsv:
@@ -199,6 +199,9 @@ def main(gh_api, json2csv, gh_path, repos_file, owner, repo, gh_id,
                 # tack on the repo slug
                 repo_slug1, repo_slug2 = r.split('/')
                 null_row += [r, repo_slug1, repo_slug2]
+                if filename == "repo_data.csv":
+                    print("Adding row to %s for null repo %s/%s" %
+                      (filename, repo_slug1, repo_slug2))
                 # add the row for that repo to the main spreadsheet
                 csv_combined.append(null_row)
 
@@ -280,7 +283,6 @@ def do_gh_api(repo='', owner='', gh_path='', params={}, headers={}):
             except:
                 print("unable to serialize %s" % resp)
     return
-
 
 if __name__ == "__main__":
     main()
