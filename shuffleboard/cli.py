@@ -15,6 +15,10 @@ import shuffleboard as sb
 csv.field_size_limit(sys.maxsize)
 HOME = os.getenv("HOME")
 
+# List of what should be fetched from api
+# TODO: this should be set by a file or from cli
+ENTITIES = []
+
 @click.command()
 @click.option('--gh_api', default=False,
               help='Get project data via GitHub API')
@@ -49,7 +53,8 @@ def main(gh_api, json2csv, gh_path, repos_file, owner, repo, gh_id,
             do_gh_api(repo=r['repo'],
                       owner=r['owner'],
                       gh_path=gh_path,
-                      params={'client_id': gh_id, 'client_secret': gh_secret}
+                      params={'client_id': gh_id, 'client_secret': gh_secret},
+                      entities=ENTITIES
                       )
 
     if json2csv or catcsv:
@@ -260,7 +265,8 @@ def get_entity_list(entity_files):
 
 # TODO: break this up into something more modular
 # this is literally a sloppy copy pasta job
-def do_gh_api(repo='', owner='', gh_path='', params={}, headers={}):
+def do_gh_api(entities=[],
+              repo='', owner='', gh_path='', params={}, headers={}):
     # make folder for project
     repo_folder = os.path.join(gh_path, owner, repo)
     os.makedirs(repo_folder, exist_ok=True)
@@ -273,7 +279,8 @@ def do_gh_api(repo='', owner='', gh_path='', params={}, headers={}):
         headers=headers
     )
 
-    repo_result = gh.get_all()
+    repo_result = gh.get_all(entities=entities)
+
     for (entity, resp) in repo_result.items():
         out_file = os.path.join(repo_folder, entity + '.json')
         print("dumping %s results to file %s" % (entity, out_file))
