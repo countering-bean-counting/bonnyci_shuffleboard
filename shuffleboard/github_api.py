@@ -25,7 +25,13 @@ class GithubGrabber:
             'repo_releases': '/repos/%s/%s/releases' % (self.owner, self.repo),
             'repo_readme': '/repos/%s/%s/readme' % (self.owner, self.repo),
             'repo_languages':
-                '/repos/%s/%s/languages' % (self.owner, self.repo)
+                '/repos/%s/%s/languages' % (self.owner, self.repo),
+            'yml_travis':
+                '/repos/%s/%s/contents/.travis.yml' % (self.owner, self.repo),
+            'yml_circleci':
+                '/repos/%s/%s/contents/circle.yml' % (self.owner, self.repo),
+            'yml_appveyor':
+                '/repos/%s/%s/contents/appveyor.yml' % (self.owner, self.repo)
         }
 
     def _get(self, url):
@@ -44,9 +50,12 @@ class GithubGrabber:
         else:
             return response.json()
 
-    def get_all(self):
+    def get_all(self, entities=[]):
         result = {}
-        for entity in self.endpoint_lookup.keys():
+        if len(entities) == 0:
+            entities = self.endpoint_lookup.keys()
+
+        for entity in entities:
             result[entity] = self.get_entity(entity=entity)
         return result
 
