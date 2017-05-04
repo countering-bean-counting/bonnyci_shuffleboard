@@ -17,7 +17,7 @@ HOME = os.getenv("HOME")
 
 # List of what should be fetched from api
 # TODO: this should be set by a file or from cli
-ENTITIES = []
+ENTITIES = ["statuses"]
 
 @click.command()
 @click.option('--gh_api', default=False,
@@ -279,7 +279,7 @@ def do_gh_api(entities=[],
         headers=headers
     )
 
-    repo_result = gh.get_all(entities=entities)
+    repo_result = gh.get_multiple(entities=entities)
 
     for (entity, resp) in repo_result.items():
         out_file = os.path.join(repo_folder, entity + '.json')

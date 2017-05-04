@@ -405,5 +405,7 @@ writer_lookup = {
     'repo_readme': Base64DictCSVWriter(fields=['content']),
     'yml_travis': Base64DictCSVWriter(fields=['content']),
     'yml_circleci': Base64DictCSVWriter(fields=['content']),
-    'yml_appveyor': Base64DictCSVWriter(fields=['content'])
+    'yml_appveyor': Base64DictCSVWriter(fields=['content']),
+    'repo_pulls': ListOfDictsCSVWriter(),
+    'statuses': ListOfDictsCSVWriter()
 }
