@@ -17,7 +17,7 @@ HOME = os.getenv("HOME")
 
 # List of what should be fetched from api
 # TODO: this should be set by a file or from cli
-ENTITIES = ["statuses"]
+ENTITIES = []
 
 @click.command()
 @click.option('--gh_api', default=False,
@@ -54,7 +54,9 @@ def main(gh_api, json2csv, gh_path, repos_file, owner, repo, gh_id,
                       owner=r['owner'],
                       gh_path=gh_path,
                       params={'client_id': gh_id, 'client_secret': gh_secret},
-                      entities=ENTITIES
+                      entities=ENTITIES,
+                      headers={
+                          'Accept':'application/vnd.github.loki-preview+json'}
                       )
 
     if json2csv or catcsv:

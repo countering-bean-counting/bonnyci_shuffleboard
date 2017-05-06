@@ -26,13 +26,20 @@ class GithubGrabber:
             'repo_readme': '/repos/%s/%s/readme' % (self.owner, self.repo),
             'repo_languages':
                 '/repos/%s/%s/languages' % (self.owner, self.repo),
+            'repo_pulls': '/repos/%s/%s/pulls' % (self.owner, self.repo),
             'yml_travis':
                 '/repos/%s/%s/contents/.travis.yml' % (self.owner, self.repo),
             'yml_circleci':
                 '/repos/%s/%s/contents/circle.yml' % (self.owner, self.repo),
             'yml_appveyor':
                 '/repos/%s/%s/contents/appveyor.yml' % (self.owner, self.repo),
-            'repo_pulls': '/repos/%s/%s/pulls' % (self.owner, self.repo)
+            'yml_probo':
+                '/repos/%s/%s/contents/.probo.yml' % (self.owner, self.repo),
+            'Jenkinsfile':
+                '/repos/%s/%s/contents/Jenkinsfile' % (self.owner, self.repo),
+            'yml_gitlab':
+                '/repos/%s/%s/contents/.gitlab-ci.yml' %
+                (self.owner, self.repo)
         }
 
         self.entity_lookup = {
