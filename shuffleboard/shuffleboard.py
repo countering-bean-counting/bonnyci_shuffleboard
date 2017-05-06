@@ -406,6 +406,8 @@ writer_lookup = {
     'yml_travis': Base64DictCSVWriter(fields=['content']),
     'yml_circleci': Base64DictCSVWriter(fields=['content']),
     'yml_appveyor': Base64DictCSVWriter(fields=['content']),
+    'yml_probo': Base64DictCSVWriter(fields=['content']),
     'repo_pulls': ListOfDictsCSVWriter(),
-    'statuses': ListOfDictsCSVWriter()
+    'statuses': ListOfDictsCSVWriter(),
+    "Jenkinsfile": Base64DictCSVWriter(fields=['content'])
 }
