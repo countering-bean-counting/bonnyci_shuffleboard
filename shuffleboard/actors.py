@@ -44,6 +44,22 @@ def main(gh_api, gh_id, gh_secret, actors_file):
                 out_file = os.path.join(actor_folder, a + '.json')
                 print("dumping %s results to file %s" % (a, out_file))
 
+                print("getting %s organizations" % a)
+
+                if 'organizations_url' in resp:
+                    resp_orgs = gh.get_entity( entity='user_orgs',
+                        api_url=resp['organizations_url'])
+                    out_file_org = os.path.join(
+                        actor_folder, a + '_orgs' + '.json')
+                    print("dumping %s org results to file %s"
+                          % (a, out_file_org))
+                else:
+                    resp_orgs = []
+
+                # include orgs as a list in the user's JSON resp
+                resp['orgs'] = ','.join([o['login'] for o in resp_orgs])
+
+
             # write to csv file
             # TODO: read "resp" from json files if no gh_api
             data = actor_writer.build_rows(resp)
