@@ -20,8 +20,10 @@ class GithubGrabber:
         self.headers = headers
 
         self.endpoint_lookup = {
-            'repo_owner': '/users/%s' % self.owner,
+            'repo_contributors':
+                '/repos/%s/%s/contributors' % (self.owner, self.repo),
             'repo_data': '/repos/%s/%s' % (self.owner, self.repo),
+            'repo_owner': '/users/%s' % self.owner,
             'repo_releases': '/repos/%s/%s/releases' % (self.owner, self.repo),
             'repo_readme': '/repos/%s/%s/readme' % (self.owner, self.repo),
             'repo_languages':
