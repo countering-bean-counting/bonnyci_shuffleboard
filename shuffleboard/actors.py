@@ -28,12 +28,13 @@ HOME = os.getenv("HOME")
 def main(gh_api, gh_id, gh_secret, actors_file, repos_file):
     actor_list = []
     contributors = {}
-    repo_lookup = {}
+
     if actors_file:
         actor_folder, end = os.path.split(actors_file)
         f = open(os.path.join(actors_file), 'r')
-        actor_list = f.read().splitlines()
-    elif repos_file: # build the list of actors
+        actor_list = sorted(f.read().splitlines())
+
+    elif repos_file:  # build the list of actors
 
         if github_api is False:  # seriously Python?
             exit("github_api must be True when repo_file is specified")
@@ -65,7 +66,7 @@ def main(gh_api, gh_id, gh_secret, actors_file, repos_file):
                 else:
                     contributors[c['login']] = {repo_slug: c}
 
-        actor_list = list(contributors.keys())
+        actor_list = sorted(list(contributors.keys()))
 
         # dump the combined contributors data to json
         with open(os.path.join(actor_folder, 'contributors',  # TODO mkdir
@@ -79,7 +80,7 @@ def main(gh_api, gh_id, gh_secret, actors_file, repos_file):
     actor_writer = sb.writer_lookup['repo_owner']
 
     for a in actor_list:
-        if gh_api: # TODO need alternate path
+        if gh_api:  # TODO need alternate path
             gh = github_api.GithubGrabber(
                 http_client=requests,
                 owner=a,
@@ -87,8 +88,10 @@ def main(gh_api, gh_id, gh_secret, actors_file, repos_file):
             )
 
             resp = gh.get_entity(entity = "repo_owner")
-            out_file = os.path.join(actor_folder, a + '.json')
+            out_file = os.path.join(actor_folder, 'actor_' + a + '.json')
             print("dumping %s results to file %s" % (a, out_file))
+            with open(out_file, 'w') as f:
+                json.dump(resp, f)
 
             print("getting %s organizations" % a)
 
@@ -96,14 +99,21 @@ def main(gh_api, gh_id, gh_secret, actors_file, repos_file):
                 resp_orgs = gh.get_entity( entity='user_orgs',
                     api_url=resp['organizations_url'])
                 out_file_org = os.path.join(
-                    actor_folder, a + '_orgs' + '.json')
+                    actor_folder, 'actor_' + a + '_orgs' + '.json')
                 print("dumping %s org results to file %s"
                       % (a, out_file_org))
+                with open(out_file_org, 'w') as f:
+                    json.dump(resp, f)
             else:
                 resp_orgs = []
 
             # include orgs as a list in the user's JSON resp
-            resp['orgs'] = ','.join([o['login'] for o in resp_orgs])
+            resp['public_orgs'] = ','.join([o['login'] for o in resp_orgs])
+
+            # get names/emails from commit history
+            emails = get_email_from_commits(gh_api = gh, folder=actor_folder)
+            resp['commits_names'] = ','.join([n for n in emails['names']])
+            resp['commits_emails'] = ','.join([e for e in emails['emails']])
 
             # if this is coming from a contributor list, add the repos they are
             # associated with
@@ -148,6 +158,78 @@ def get_repo_contributors(repo="", owner="", params={}, headers={}, folder=""):
             print("unable to serialize %s" % resp)
 
     return resp
+
+
+def get_email_from_commits(gh_api="", folder=""):
+
+    emails = {'names': {}, 'emails': {}}
+
+    # get repos
+    repos = gh_api.get_entity(entity='owner_repos')
+    out_file = os.path.join(folder, 'actor_repos_' + gh_api.owner + '.json')
+
+    if not isinstance(repos, list) or len(repos) == 0:
+        print("No repos found for %s: %s" % (gh_api.owner, repos))
+        return emails
+    else:
+        print("dumping %s repos results to file %s" % (gh_api.owner, out_file))
+        with open(out_file, 'w') as f:
+            try:
+                json.dump(repos, f)
+            except:
+                print("unable to serialize %s" % repos)
+
+    # for each repo get commits by owner
+    for r in repos:
+        print("getting commits for %s from %s" % (gh_api.owner, r['name']))
+        gh_commits = github_api.GithubGrabber(
+            http_client=requests,
+            params={**gh_api.params, 'author': gh_api.owner},
+            headers=gh_api.headers,
+            owner=gh_api.owner,
+            repo=r['name']
+        )
+        commits_url = re.sub(r'\{\/sha\}', '', r['commits_url'])
+        try:
+            commits = gh_commits.get_entity(entity='owner_repo_commits',
+                                        api_url=commits_url)
+        except:
+            print("error getting commits: ", sys.exc_info()[0])
+            continue
+
+        if not isinstance(commits, list) or len(commits) == 0:
+            print("No commits found for %s in %s" % (gh_api.owner, r['name']))
+            continue
+        else:
+            commits_file = os.path.join(folder, '_'.join(
+                ['actor', 'commits', gh_api.owner, r['name']]) + '.json')
+            print("dumping %s commits results to file %s" %
+                  (gh_api.owner, commits_file))
+            with open(commits_file, 'w') as f:
+                try:
+                    json.dump(commits, f)
+                except:
+                    print("unable to serialize %s" % commits)
+
+        # for each commit extract name/email
+        for c in commits:
+            com = c['commit']['author']
+            # use a dict so they stay unique
+            if com['name'] in emails['names']:
+                emails['names'][com['name']] += 1
+            else:
+                emails['names'][com['name']] = 1
+                print("New name for %s in %s: %s" %
+                      (gh_api.owner, r['name'], com['name']))
+
+            if com['email'] in emails['emails']:
+                emails['emails'][com['email']] += 1
+            else:
+                emails['emails'][com['email']] = 1
+                print("New email for %s in %s: %s" %
+                      (gh_api.owner, r['name'], com['email']))
+
+    return emails
 
 if __name__ == "__main__":
     main()
