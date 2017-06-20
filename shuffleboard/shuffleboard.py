@@ -397,6 +397,63 @@ class Base64DictCSVWriter(CSVWriter):
         return sheet
 
 
+class MeatmapCSVWriter(CSVWriter):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def build_rows(self, data={}, extra=[]):
+        sheet = []
+
+        # build the header row
+        # meetup api entries have different attributes, make sure we get all of
+        # the ones in this set
+        # add the "extra" fields explicitly for combining responses for
+        # different things that might not have the fields within the same grouping
+        header_row_set = set(extra)  # list of column headers
+        data_expanded = []  # contains JSON object attributes as top level entries
+        for i in data:
+            row = {}
+            for (key, value) in i.items():
+                if isinstance(value,
+                              dict):  # special handling for JSON objects
+                    sub_expanded = {'_'.join([key, k]): value[k]
+                                    for k in value.keys()}
+
+                    # combine the new dict with the current row
+                    row = {**row, **sub_expanded}
+                    # add any extra keys to the column heading list
+                    header_row_set.update(
+                        sub_expanded.keys() - header_row_set)
+                else:
+                    row[key] = value
+                    if key not in header_row_set:
+                        header_row_set.update([key])
+            data_expanded.append(row)
+        header_row = sorted(header_row_set)
+        sheet.append(header_row)
+
+        # build the data rows
+        data_rows = []
+        for i in data_expanded:
+            row = []
+            for column in header_row:  # get the value if the column exists
+                if column in i:
+                    # check if it's a JSON object, if so then just dump it as JSON
+                    if isinstance(i[column], dict):
+                        row.append(
+                            json.dumps(dict(sorted(i[column].items()))))
+                    else:
+                        row.append(i[column])
+                else:  # set to null to ensure same number of columns in csv
+                    row.append("")
+
+            data_rows.append(row)
+
+        sheet += data_rows
+        return sheet
+
+
 writer_lookup = {
     'repo_languages': KeyAsColumnDictCSVWriter(header_row=['language', 'loc']),
     'repo_owner': DictCSVWriter(),
