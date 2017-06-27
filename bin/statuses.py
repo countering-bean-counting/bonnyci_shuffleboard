@@ -7,7 +7,7 @@ import re
 import requests
 import sys
 
-import github_api
+from shuffleboard import github_api
 import shuffleboard as sb
 
 csv.field_size_limit(sys.maxsize)
